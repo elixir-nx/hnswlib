@@ -34,6 +34,7 @@ $(NIF_SO):
 			-D MIX_APP_PATH="$(MIX_APP_PATH)" \
 			-D PRIV_DIR="$(PRIV_DIR)" \
 			-D ERTS_INCLUDE_DIR="$(ERTS_INCLUDE_DIR)" \
+			-D EI_INCLUDE_DIR="$(EI_INCLUDE_DIR)" \
 			$(CMAKE_CONFIGURE_FLAGS) $(CMAKE_HNSWLIB_OPTIONS) "$(shell pwd)" && \
 			make "$(MAKE_BUILD_FLAGS)" \
 			|| { echo "\033[0;31mincomplete build of hnswlib found in '$(CMAKE_HNSWLIB_BUILD_DIR)', please delete that directory and retry\033[0m" && exit 1 ; } ; } \

@@ -22,6 +22,21 @@ else()
 endif()
 message(STATUS "Using ERTS_INCLUDE_DIR: ${ERTS_INCLUDE_DIR}")
 
+if(DEFINED EI_INCLUDE_DIR AND NOT "${EI_INCLUDE_DIR}" STREQUAL "")
+    set(EI_INCLUDE_DIR "${EI_INCLUDE_DIR}")
+else()
+    if(WIN32)
+        execute_process(COMMAND powershell -command "application:load(erl_interface),{ok,Vsn}=application:get_key(erl_interface, vsn),io:format('~ts/lib/erl_interface-~ts', [code:root_dir(), Vsn]),init:stop().\"" OUTPUT_VARIABLE EI_DIR)
+    else()
+        execute_process(COMMAND bash -c "erl -noshell -eval \"application:load(erl_interface),{ok,Vsn}=application:get_key(erl_interface, vsn),io:format('~ts/lib/erl_interface-~ts', [code:root_dir(), Vsn]),init:stop().\"" OUTPUT_VARIABLE EI_DIR)
+    endif()
+
+    set(EI_INCLUDE_DIR "${EI_DIR}/include")
+    set(EI_LIB_DIR "${EI_DIR}/lib")
+endif()
+message(STATUS "Using EI_INCLUDE_DIR: ${EI_INCLUDE_DIR}")
+message(STATUS "Using EI_LIB_DIR: ${EI_LIB_DIR}")
+
 if(UNIX AND APPLE)
     set(CMAKE_SHARED_LINKER_FLAGS "-flat_namespace -undefined suppress -undefined dynamic_lookup")
 endif()
@@ -40,7 +55,11 @@ set(SOURCE_FILES
     "${C_SRC}/hnswlib_nif_resource.cpp"
 )
 
+include_directories("${ERTS_INCLUDE_DIR}")
+include_directories("${EI_INCLUDE_DIR}")
 include_directories("${HNSWLIB_SRC}")
+link_directories("${EI_LIB_DIR}")
+link_libraries(ei)
 
 add_library(hnswlib_nif SHARED
     ${SOURCE_FILES}
@@ -63,7 +82,7 @@ elseif(UNIX AND APPLE)
     set(CMAKE_SHARED_LINKER_FLAGS "-flat_namespace -undefined suppress -undefined dynamic_lookup")
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -I${ERTS_INCLUDE_DIR}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g3")
