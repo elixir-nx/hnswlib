@@ -12,6 +12,7 @@ defmodule HNSWLib.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: package(),
+      docs: docs(),
       compilers: [:elixir_make] ++ Mix.compilers(),
       make_precompiler: {:nif, CCPrecompiler},
       make_precompiler_url: "#{@github_url}/releases/download/v#{@version}/@{artefact_filename}",
