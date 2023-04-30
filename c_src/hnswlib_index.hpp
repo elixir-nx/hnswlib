@@ -55,22 +55,22 @@ class Index {
     }
 
 
-    // void init_new_index(
-    //     size_t maxElements,
-    //     size_t M,
-    //     size_t efConstruction,
-    //     size_t random_seed,
-    //     bool allow_replace_deleted) {
-    //     if (appr_alg) {
-    //         throw std::runtime_error("The index is already initiated.");
-    //     }
-    //     cur_l = 0;
-    //     appr_alg = new hnswlib::HierarchicalNSW<dist_t>(l2space, maxElements, M, efConstruction, random_seed, allow_replace_deleted);
-    //     index_inited = true;
-    //     ep_added = false;
-    //     appr_alg->ef_ = default_ef;
-    //     seed = random_seed;
-    // }
+    void init_new_index(
+        size_t maxElements,
+        size_t M,
+        size_t efConstruction,
+        size_t random_seed,
+        bool allow_replace_deleted) {
+        if (appr_alg) {
+            throw std::runtime_error("The index is already initiated.");
+        }
+        cur_l = 0;
+        appr_alg = new hnswlib::HierarchicalNSW<dist_t>(l2space, maxElements, M, efConstruction, random_seed, allow_replace_deleted);
+        index_inited = true;
+        ep_added = false;
+        appr_alg->ef_ = default_ef;
+        seed = random_seed;
+    }
 
 
     // void set_ef(size_t ef) {

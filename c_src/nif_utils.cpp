@@ -60,6 +60,25 @@ ERL_NIF_TERM ok(ErlNifEnv *env, ERL_NIF_TERM term) {
     return enif_make_tuple2(env, ok(env), term);
 }
 
+// Boolean type
+
+int get(ErlNifEnv *env, ERL_NIF_TERM term, bool *var) {
+    std::string b;
+    if (get_atom(env, term, b)) {
+        if (b == "true") {
+            *var = true;
+            return 1;
+        } else if (b == "false") {
+            *var = false;
+            return 1;
+        } else {
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+}
+
 // Numeric types
 
 int get(ErlNifEnv *env, ERL_NIF_TERM term, int *var) {
@@ -317,18 +336,6 @@ int check_nil(ErlNifEnv *env, ERL_NIF_TERM term) {
         return true;
     }
     return false;
-}
-
-// Boolean
-
-int get(ErlNifEnv *env, ERL_NIF_TERM term, bool *var) {
-    std::string bool_atom;
-    if (!get_atom(env, term, bool_atom)) {
-        return 0;
-    }
-
-    *var = (bool_atom == "true");
-    return 1;
 }
 
 // Containers

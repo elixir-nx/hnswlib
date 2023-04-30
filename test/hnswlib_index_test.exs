@@ -66,4 +66,22 @@ defmodule HNSWLib.Index.Test do
     assert space == index.space
     assert dim == index.dim
   end
+
+  test "HNSWLib.Index.init/3" do
+    space = :l2
+    dim = 8
+    {:ok, index} = HNSWLib.Index.new(space, dim)
+
+    assert :ok == HNSWLib.Index.init_index(index, 200)
+  end
+
+  test "HNSWLib.Index.init/3 should only be called once" do
+    space = :l2
+    dim = 8
+    {:ok, index} = HNSWLib.Index.new(space, dim)
+
+    assert :ok == HNSWLib.Index.init_index(index, 200)
+    assert {:error, "The index is already initiated."} == HNSWLib.Index.init_index(index, 200)
+    assert {:error, "The index is already initiated."} == HNSWLib.Index.init_index(index, 200)
+  end
 end
