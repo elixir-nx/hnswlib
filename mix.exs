@@ -1,13 +1,21 @@
-defmodule HNSW.MixProject do
+defmodule HNSWLib.MixProject do
   use Mix.Project
+
+  @version "0.1.0"
+  @github_url "https://github.com/cocoa-xu/hnswlib_elixir"
 
   def project do
     [
-      app: :hnsw_elixir,
-      version: "0.1.0",
-      elixir: "~> 1.14",
+      app: :hnswlib_elixir,
+      version: @version,
+      elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      package: package(),
+      compilers: [:elixir_make] ++ Mix.compilers(),
+      make_precompiler: {:nif, CCPrecompiler},
+      make_precompiler_url: "#{@github_url}/releases/download/v#{@version}/@{artefact_filename}",
+      make_precompiler_filename: "hnswlib_nif"
     ]
   end
 
@@ -19,8 +27,32 @@ defmodule HNSW.MixProject do
 
   defp deps do
     [
-      # {:dep_from_hexpm, "~> 0.3.0"},
-      # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
+      # compilation
+      {:cc_precompiler, "~> 0.1.0"},
+      {:elixir_make, "~> 0.7.0"},
+
+      # runtime
+      {:nx, "~> 0.5"},
+
+      # docs
+      {:ex_doc, "~> 0.29", only: :docs, runtime: false}
+    ]
+  end
+
+  defp docs do
+    [
+      main: "HNSWLib Elixir",
+      source_ref: "v#{@version}",
+      source_url: @github_url
+    ]
+  end
+
+  defp package() do
+    [
+      name: "hnswlib_elixir",
+      files: ~w(3rd_party/hnswlib c_src lib mix.exs README* LICENSE* Makefile),
+      licenses: ["Apache-2.0"],
+      links: %{"GitHub" => @github_url}
     ]
   end
 end
