@@ -24,3 +24,9 @@ hnsw_elixir-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode
