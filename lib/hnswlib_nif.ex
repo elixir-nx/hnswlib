@@ -12,10 +12,9 @@ defmodule HNSWLib.Nif do
     end
   end
 
-  def new(_space, _dim), do: :erlang.nif_error(:not_loaded)
-
-  def init_index(
-        _self,
+  def new(
+        _space,
+        _dim,
         _max_elements,
         _m,
         _ef_construction,
