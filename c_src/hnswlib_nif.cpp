@@ -1,4 +1,5 @@
 #include <erl_nif.h>
+#include <ei.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include "nif_utils.hpp"
@@ -70,6 +71,62 @@ static ERL_NIF_TERM hnswlib_new(ErlNifEnv *env, int argc, const ERL_NIF_TERM arg
     return erlang::nif::ok(env, ret);
 }
 
+static ERL_NIF_TERM hnswlib_knn_query(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 7) {
+        return erlang::nif::error(env, "expecting 7 arguments");
+    }
+
+    NifResHNSWLibIndex * index = nullptr;
+    ErlNifBinary data;
+    size_t k;
+    ssize_t num_threads; 
+    ERL_NIF_TERM filter;
+    size_t rows, features;
+    ERL_NIF_TERM ret, error;
+
+    if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
+        return error;
+    }
+    if (!enif_inspect_binary(env, argv[1], &data)) {
+        return erlang::nif::error(env, "expect `data` to be a binary");
+    }
+    if (data.size % sizeof(float) != 0) {
+        return erlang::nif::error(env, (
+            std::string{"expect `data`'s size to be a multiple of "} + std::to_string(sizeof(float)) + " (sizeof(float)), got `" + std::to_string(data.size) + "` bytes").c_str());
+    }
+    if (!erlang::nif::get(env, argv[2], &k) || k == 0) {
+        return erlang::nif::error(env, "expect parameter `k` to be a positive integer");
+    }
+    if (!erlang::nif::get(env, argv[3], &num_threads)) {
+        return erlang::nif::error(env, "expect parameter `num_threads` to be an integer");
+    }
+    if (!enif_is_fun(env, argv[4]) && !erlang::nif::check_nil(env, argv[4])) {
+        return erlang::nif::error(env, "expect parameter `filter` to be a function or `nil`");
+    }
+    if (!erlang::nif::get(env, argv[5], &rows)) {
+        return erlang::nif::error(env, "expect parameter `rows` to be a non-negative integer");
+    }
+    if (!erlang::nif::get(env, argv[6], &features)) {
+        return erlang::nif::error(env, "expect parameter `features` to be a non-negative integer");
+    }
+
+    ErlNifPid * process = (ErlNifPid *)enif_alloc(sizeof(ErlNifPid));
+    if (process == nullptr) {
+      return erlang::nif::error(env, "cannot allocate memory for ErlNifPid.");
+    }
+    process = enif_self(env, process);
+
+    hnswlib::labeltype *data_l;
+    float *data_d;
+
+    enif_free(process);
+    return erlang::nif::ok(env);
+}
+
+static ERL_NIF_TERM hnswlib_float_size(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    return enif_make_uint(env, sizeof(float));
+}
+
 static int on_load(ErlNifEnv *env, void **, ERL_NIF_TERM) {
     ErlNifResourceType *rt;
 
@@ -88,11 +145,10 @@ static int on_upgrade(ErlNifEnv *, void **, void **, ERL_NIF_TERM) {
     return 0;
 }
 
-#define F_CPU(NAME, ARITY) {#NAME, ARITY, NAME, ERL_NIF_DIRTY_JOB_CPU_BOUND}
-#define F_IO(NAME, ARITY) {#NAME, ARITY, NAME, ERL_NIF_DIRTY_JOB_IO_BOUND}
-
 static ErlNifFunc nif_functions[] = {
-    {"new", 7, hnswlib_new, 0}
+    {"new", 7, hnswlib_new, 0},
+    {"knn_query", 7, hnswlib_knn_query, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"float_size", 0, hnswlib_float_size, 0}
 };
 
 ERL_NIF_INIT(Elixir.HNSWLib.Nif, nif_functions, on_load, on_reload, on_upgrade, NULL);

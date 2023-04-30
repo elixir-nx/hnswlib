@@ -22,4 +22,9 @@ defmodule HNSWLib.Nif do
         _allow_replace_deleted
       ),
       do: :erlang.nif_error(:not_loaded)
+
+  def knn_query(_self, _data, _k, _num_threads, _filter, _rows, _features),
+    do: :erlang.nif_error(:not_loaded)
+
+  def float_size, do: :erlang.nif_error(:not_loaded)
 end

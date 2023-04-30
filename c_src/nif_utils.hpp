@@ -134,6 +134,8 @@ int get(ErlNifEnv *env, ERL_NIF_TERM term, uint64_t *var);
 
 int get(ErlNifEnv *env, ERL_NIF_TERM term, unsigned long *var);
 
+int get(ErlNifEnv *env, ERL_NIF_TERM term, long *var);
+
 int get(ErlNifEnv *env, ERL_NIF_TERM term, double *var);
 
 // Standard types

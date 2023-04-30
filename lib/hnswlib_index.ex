@@ -3,8 +3,11 @@ defmodule HNSWLib.Index do
   Documentation for `HNSWLib.Index`.
   """
 
-  defstruct [:space, :dim, :reference]
+  defstruct [:space, :dim, :pid]
   alias __MODULE__, as: T
+  alias HNSWLib.Helper
+
+  use GenServer
 
   @doc """
   Construct a new Index
@@ -43,26 +46,22 @@ defmodule HNSWLib.Index do
   def new(space, dim, max_elements, opts \\ [])
       when (space == :l2 or space == :ip or space == :cosine) and is_integer(dim) and dim >= 0 and
              is_integer(max_elements) and max_elements >= 0 do
-    with {:ok, m} <- get_keyword(opts, :m, :non_neg_integer, 16),
-         {:ok, ef_construction} <- get_keyword(opts, :ef_construction, :non_neg_integer, 200),
-         {:ok, random_seed} <- get_keyword(opts, :random_seed, :non_neg_integer, 100),
+    with {:ok, m} <- Helper.get_keyword(opts, :m, :non_neg_integer, 16),
+         {:ok, ef_construction} <-
+           Helper.get_keyword(opts, :ef_construction, :non_neg_integer, 200),
+         {:ok, random_seed} <- Helper.get_keyword(opts, :random_seed, :non_neg_integer, 100),
          {:ok, allow_replace_deleted} <-
-           get_keyword(opts, :allow_replace_deleted, :boolean, false),
-         {:ok, ref} <-
-           HNSWLib.Nif.new(
-             space,
-             dim,
-             max_elements,
-             m,
-             ef_construction,
-             random_seed,
-             allow_replace_deleted
+           Helper.get_keyword(opts, :allow_replace_deleted, :boolean, false),
+         {:ok, pid} <-
+           GenServer.start(
+             __MODULE__,
+             {space, dim, max_elements, m, ef_construction, random_seed, allow_replace_deleted}
            ) do
       {:ok,
        %T{
          space: space,
          dim: dim,
-         reference: ref
+         pid: pid
        }}
     else
       {:error, reason} ->
@@ -70,24 +69,127 @@ defmodule HNSWLib.Index do
     end
   end
 
-  defp get_keyword(opts, key, type, default) do
-    get_keyword(key, opts[key] || default, type)
+  @spec knn_query(%T{}, Nx.Tensor.t() | binary() | [binary()], [
+          {:k, pos_integer()},
+          {:num_threads, integer()},
+          {:filter, function()}
+        ]) :: :ok | {:error, String.t()}
+  def knn_query(self, data, opts \\ [])
+
+  def knn_query(self = %T{}, data, opts) when is_binary(data) do
+    with {:ok, k} <- Helper.get_keyword(opts, :k, :pos_integer, 1),
+         {:ok, num_threads} <- Helper.get_keyword(opts, :num_threads, :integer, -1),
+         {:ok, filter} <- Helper.get_keyword(opts, :filter, {:function, 1}, nil, true) do
+      if rem(byte_size(data), float_size()) != 0 do
+        {:error,
+         "vector feature size should be a multiple of #{HNSWLib.Nif.float_size()} (sizeof(float))"}
+      else
+        features = trunc(byte_size(data) / float_size())
+        if features != self.dim do
+          {:error, "Wrong dimensionality of the vectors, expect `#{self.dim}`, got `#{features}`"}
+        else
+          GenServer.call(
+            self.pid,
+            {:knn_query, data, k, num_threads, filter, 1, features}
+          )
+        end
+      end
+    else
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
-  defp get_keyword(_key, val, :non_neg_integer) when is_integer(val) and val >= 0 do
-    {:ok, val}
+  def knn_query(self = %T{}, data, opts) when is_list(data) do
+    with {:ok, k} <- Helper.get_keyword(opts, :k, :pos_integer, 1),
+         {:ok, num_threads} <- Helper.get_keyword(opts, :num_threads, :integer, -1),
+         {:ok, filter} <- Helper.get_keyword(opts, :filter, {:function, 1}, nil, true),
+         {:ok, {rows, features}} <- Helper.list_of_binary(data) do
+      if features != self.dim do
+        {:error, "Wrong dimensionality of the vectors, expect `#{self.dim}`, got `#{features}`"}
+      else
+        GenServer.call(
+          self.pid,
+          {:knn_query, IO.iodata_to_binary(data), k, num_threads, filter, rows, features}
+        )
+      end
+    else
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
-  defp get_keyword(key, val, :non_neg_integer) do
-    {:error,
-     "expect keyword parameter `#{inspect(key)}` to be a non-negative integer, got `#{inspect(val)}`"}
+  def knn_query(self = %T{}, data = %Nx.Tensor{}, opts) do
+    with {:ok, k} <- Helper.get_keyword(opts, :k, :pos_integer, 1),
+         {:ok, num_threads} <- Helper.get_keyword(opts, :num_threads, :integer, -1),
+         {:ok, filter} <- Helper.get_keyword(opts, :filter, {:function, 1}, nil, true) do
+      case data.shape do
+        {rows, features} ->
+          if features != self.dim do
+            {:error, "Wrong dimensionality of the vectors, expect `#{self.dim}`, got `#{features}`"}
+          else
+            GenServer.call(
+              self.pid,
+              {:knn_query, Nx.to_binary(Nx.as_type(data, :f32)), k, num_threads, filter, rows,
+               features}
+            )
+          end
+
+        {features} ->
+          if features != self.dim do
+            {:error, "Wrong dimensionality of the vectors, expect `#{self.dim}`, got `#{features}`"}
+          else
+            GenServer.call(
+              self.pid,
+              {:knn_query, Nx.to_binary(Nx.as_type(data, :f32)), k, num_threads, filter, 1,
+               features}
+            )
+          end
+
+        shape ->
+          {:error,
+           "Input vector data wrong shape. Number of dimensions #{tuple_size(shape)}. Data must be a 1D or 2D array."}
+      end
+    else
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
-  defp get_keyword(_key, val, :boolean) when is_boolean(val) do
-    {:ok, val}
+  defp float_size do
+    HNSWLib.Nif.float_size()
   end
 
-  defp get_keyword(key, val, :boolean) do
-    {:error, "expect keyword parameter `#{inspect(key)}` to be a boolean, got `#{inspect(val)}`"}
+  # GenServer callbacks
+
+  @impl true
+  def init({space, dim, max_elements, m, ef_construction, random_seed, allow_replace_deleted}) do
+    case HNSWLib.Nif.new(
+           space,
+           dim,
+           max_elements,
+           m,
+           ef_construction,
+           random_seed,
+           allow_replace_deleted
+         ) do
+      {:ok, ref} ->
+        {:ok, ref}
+
+      {:error, reason} ->
+        {:stop, {:error, reason}}
+    end
+  end
+
+  @impl true
+  def handle_call({:knn_query, data, k, num_threads, filter, rows, features}, _from, self) do
+    case HNSWLib.Nif.knn_query(self, data, k, num_threads, filter, rows, features) do
+      any ->
+        {:reply, any, self}
+    end
+  end
+
+  @impl true
+  def handle_info({:knn_query_filter, filter, id}, _self) do
   end
 end

@@ -8,28 +8,28 @@ defmodule HNSWLib.Index.Test do
     max_elements = 200
     {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
 
-    assert is_reference(index.reference)
+    assert is_pid(index.pid)
     assert space == index.space
     assert dim == index.dim
 
     dim = 12
     {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
 
-    assert is_reference(index.reference)
+    assert is_pid(index.pid)
     assert space == index.space
     assert dim == index.dim
 
     space = :cosine
     {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
 
-    assert is_reference(index.reference)
+    assert is_pid(index.pid)
     assert space == index.space
     assert dim == index.dim
 
     space = :ip
     {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
 
-    assert is_reference(index.reference)
+    assert is_pid(index.pid)
     assert space == index.space
     assert dim == index.dim
   end
@@ -40,14 +40,14 @@ defmodule HNSWLib.Index.Test do
     max_elements = 200
     {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
 
-    assert is_reference(index.reference)
+    assert is_pid(index.pid)
     assert space == index.space
     assert dim == index.dim
 
     dim = 12
     {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
 
-    assert is_reference(index.reference)
+    assert is_pid(index.pid)
     assert space == index.space
     assert dim == index.dim
   end
@@ -58,14 +58,14 @@ defmodule HNSWLib.Index.Test do
     max_elements = 200
     {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
 
-    assert is_reference(index.reference)
+    assert is_pid(index.pid)
     assert space == index.space
     assert dim == index.dim
 
     dim = 12
     {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
 
-    assert is_reference(index.reference)
+    assert is_pid(index.pid)
     assert space == index.space
     assert dim == index.dim
   end
@@ -88,7 +88,7 @@ defmodule HNSWLib.Index.Test do
         allow_replace_deleted: allow_replace_deleted
       )
 
-    assert is_reference(index.reference)
+    assert is_pid(index.pid)
     assert space == index.space
     assert dim == index.dim
 
@@ -102,7 +102,7 @@ defmodule HNSWLib.Index.Test do
         allow_replace_deleted: allow_replace_deleted
       )
 
-    assert is_reference(index.reference)
+    assert is_pid(index.pid)
     assert space == index.space
     assert dim == index.dim
   end
@@ -155,5 +155,126 @@ defmodule HNSWLib.Index.Test do
              HNSWLib.Index.new(space, dim, max_elements,
                allow_replace_deleted: allow_replace_deleted
              )
+  end
+
+  test "HNSWLib.Index.knn_query/2 with binary" do
+    space = :ip
+    dim = 2
+    max_elements = 200
+    data = <<42.0::float-32, 42.0::float-32>>
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    assert :ok == HNSWLib.Index.knn_query(index, data)
+  end
+
+  test "HNSWLib.Index.knn_query/2 with [binary]" do
+    space = :ip
+    dim = 2
+    max_elements = 200
+    data = [<<42.0::float-32, 42.0::float-32>>, <<42.0::float-32, 42.0::float-32>>]
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    assert :ok == HNSWLib.Index.knn_query(index, data)
+  end
+
+  test "HNSWLib.Index.knn_query/2 with Nx.Tensor (:f32)" do
+    space = :ip
+    dim = 2
+    max_elements = 200
+    data = Nx.tensor([1, 2], type: :f32)
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    assert :ok == HNSWLib.Index.knn_query(index, data)
+  end
+
+  test "HNSWLib.Index.knn_query/2 with Nx.Tensor (:u8)" do
+    space = :ip
+    dim = 2
+    max_elements = 200
+    data = Nx.tensor([1, 2], type: :u8)
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    assert :ok == HNSWLib.Index.knn_query(index, data)
+  end
+
+  test "HNSWLib.Index.knn_query/2 with invalid length of data" do
+    space = :ip
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+    data = <<42::16, 1::24>>
+
+    assert {:error, "vector feature size should be a multiple of 4 (sizeof(float))"} ==
+             HNSWLib.Index.knn_query(index, data)
+  end
+
+  test "HNSWLib.Index.knn_query/2 with invalid dimensions of data" do
+    space = :ip
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+    data = <<42::float-32, 42::float-32, 42::float-32>>
+
+    assert {:error, "Wrong dimensionality of the vectors, expect `2`, got `3`"} ==
+             HNSWLib.Index.knn_query(index, data)
+  end
+
+  test "HNSWLib.Index.knn_query/2 with inconsistent dimensions of [data]" do
+    space = :ip
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+    data = [<<42::float-32, 42::float-32>>, <<42::float-32, 42::float-32, 42::float-32>>]
+
+    assert {:error, "all vectors in the input list should have the same size"} ==
+             HNSWLib.Index.knn_query(index, data)
+  end
+
+  test "HNSWLib.Index.knn_query/2 with invalid dimensions of [data]" do
+    space = :ip
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+    data = [<<42::float-32, 42::float-32, 42::float-32>>, <<42::float-32, 42::float-32, 42::float-32>>]
+
+    assert {:error, "Wrong dimensionality of the vectors, expect `2`, got `3`"} ==
+             HNSWLib.Index.knn_query(index, data)
+  end
+
+  test "HNSWLib.Index.knn_query/2 with invalid type for `k`" do
+    space = :ip
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+    data = <<42.0, 42.0>>
+    k = :invalid
+
+    assert {:error, "expect keyword parameter `:k` to be a positive integer, got `:invalid`"} ==
+             HNSWLib.Index.knn_query(index, data, k: k)
+  end
+
+  test "HNSWLib.Index.knn_query/2 with invalid type for `num_threads`" do
+    space = :ip
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+    data = <<42.0, 42.0>>
+    num_threads = :invalid
+
+    assert {:error, "expect keyword parameter `:num_threads` to be an integer, got `:invalid`"} ==
+             HNSWLib.Index.knn_query(index, data, num_threads: num_threads)
+  end
+
+  test "HNSWLib.Index.knn_query/2 with invalid type for `filter`" do
+    space = :ip
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+    data = <<42.0, 42.0>>
+    filter = :invalid
+
+    assert {:error,
+            "expect keyword parameter `:filter` to be a function that can be applied with 1 number of arguments , got `:invalid`"} ==
+             HNSWLib.Index.knn_query(index, data, filter: filter)
   end
 end
