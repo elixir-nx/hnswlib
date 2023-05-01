@@ -57,11 +57,14 @@ static ERL_NIF_TERM hnswlib_new(ErlNifEnv *env, int argc, const ERL_NIF_TERM arg
         return error;
     }
 
-    index->val = new Index<float>(space, dim);
+    index->val = nullptr;
     try {
+        index->val = new Index<float>(space, dim);
         index->val->init_new_index(max_elements, m, ef_construction, random_seed, allow_replace_deleted);
     } catch (std::runtime_error &err) {
-        delete index->val;
+        if (index->val) {
+            delete index->val;
+        }
         enif_release_resource(index);
         return erlang::nif::error(env, err.what());
     }
