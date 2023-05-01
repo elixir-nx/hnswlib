@@ -132,6 +132,11 @@ defmodule HNSWLib.Index do
     end
   end
 
+  @spec get_ids_list(%T{}) :: {:ok, [integer()]} | {:error, String.t()}
+  def get_ids_list(self = %T{}) do
+    GenServer.call(self.pid, :get_ids_list)
+  end
+
   @spec get_ef(%T{}) :: {:ok, non_neg_integer()} | {:error, String.t()}
   def get_ef(self = %T{}) do
     GenServer.call(self.pid, :get_ef)
@@ -142,9 +147,14 @@ defmodule HNSWLib.Index do
     GenServer.call(self.pid, {:set_ef, new_ef})
   end
 
-  @spec get_ids_list(%T{}) :: {:ok, [integer()]} | {:error, String.t()}
-  def get_ids_list(self = %T{}) do
-    GenServer.call(self.pid, :get_ids_list)
+  @spec mark_deleted(%T{}, non_neg_integer()) :: :ok | {:error, String.t()}
+  def mark_deleted(self = %T{}, label) when is_integer(label) and label >= 0 do
+    GenServer.call(self.pid, {:mark_deleted, label})
+  end
+
+  @spec unmark_deleted(%T{}, non_neg_integer()) :: :ok | {:error, String.t()}
+  def unmark_deleted(self = %T{}, label) when is_integer(label) and label >= 0 do
+    GenServer.call(self.pid, {:unmark_deleted, label})
   end
 
   @spec add_items(%T{}, Nx.Tensor.t() | binary() | [binary()], [
@@ -277,6 +287,16 @@ defmodule HNSWLib.Index do
   @impl true
   def handle_call({:set_ef, new_ef}, _from, self) do
     {:reply, HNSWLib.Nif.set_ef(self, new_ef), self}
+  end
+
+  @impl true
+  def handle_call({:mark_deleted, label}, _from, self) do
+    {:reply, HNSWLib.Nif.mark_deleted(self, label), self}
+  end
+
+  @impl true
+  def handle_call({:unmark_deleted, label}, _from, self) do
+    {:reply, HNSWLib.Nif.unmark_deleted(self, label), self}
   end
 
   @impl true

@@ -183,6 +183,56 @@ static ERL_NIF_TERM hnswlib_add_items(ErlNifEnv *env, int argc, const ERL_NIF_TE
     return erlang::nif::ok(env);
 }
 
+static ERL_NIF_TERM hsnwlib_mark_deleted(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 2) {
+        return erlang::nif::error(env, "expecting 2 arguments");
+    }
+
+    NifResHNSWLibIndex * index = nullptr;
+    size_t label;
+    ERL_NIF_TERM ret, error;
+
+    if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
+        return error;
+    }
+    if (!erlang::nif::get(env, argv[1], &label)) {
+        return erlang::nif::error(env, "expect parameter `label` to be a non-negative integer");
+    }
+
+    try {
+        index->val->markDeleted(label);
+    } catch (std::runtime_error &err) {
+        return erlang::nif::error(env, err.what());
+    }
+
+    return erlang::nif::ok(env);
+}
+
+static ERL_NIF_TERM hsnwlib_unmark_deleted(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 2) {
+        return erlang::nif::error(env, "expecting 2 arguments");
+    }
+
+    NifResHNSWLibIndex * index = nullptr;
+    size_t label;
+    ERL_NIF_TERM ret, error;
+
+    if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
+        return error;
+    }
+    if (!erlang::nif::get(env, argv[1], &label)) {
+        return erlang::nif::error(env, "expect parameter `label` to be a non-negative integer");
+    }
+
+    try {
+        index->val->unmarkDeleted(label);
+    } catch (std::runtime_error &err) {
+        return erlang::nif::error(env, err.what());
+    }
+
+    return erlang::nif::ok(env);
+}
+
 static ERL_NIF_TERM hsnwlib_resize_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 2) {
         return erlang::nif::error(env, "expecting 2 arguments");
@@ -323,9 +373,11 @@ static ErlNifFunc nif_functions[] = {
     {"new", 7, hnswlib_new, 0},
     {"knn_query", 7, hnswlib_knn_query, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"add_items", 7, hnswlib_add_items, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"get_ids_list", 1, hnswlib_get_ids_list, 0},
     {"get_ef", 1, hsnwlib_get_ef, 0},
     {"set_ef", 2, hsnwlib_set_ef, 0},
-    {"get_ids_list", 1, hnswlib_get_ids_list, 0},
+    {"mark_deleted", 2, hsnwlib_mark_deleted, 0},
+    {"unmark_deleted", 2, hsnwlib_unmark_deleted, 0},
     {"resize_index", 2, hsnwlib_resize_index, 0},
     {"get_max_elements", 1, hsnwlib_get_max_elements, 0},
     {"get_current_count", 1, hsnwlib_get_current_count, 0},

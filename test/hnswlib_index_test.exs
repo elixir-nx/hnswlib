@@ -366,6 +366,52 @@ defmodule HNSWLib.Index.Test do
     assert {:ok, 1000} == HNSWLib.Index.get_ef(index)
   end
 
+  test "HNSWLib.Index.mark_deleted/2" do
+    space = :ip
+    dim = 2
+    max_elements = 200
+    items = Nx.tensor([[10, 20], [30, 40]], type: :f32)
+    ids = Nx.tensor([100, 200])
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+    assert :ok == HNSWLib.Index.add_items(index, items, ids: ids)
+
+    assert :ok == HNSWLib.Index.mark_deleted(index, 100)
+  end
+
+  test "HNSWLib.Index.mark_deleted/2 when the id does not exist" do
+    space = :ip
+    dim = 2
+    max_elements = 200
+    items = Nx.tensor([[10, 20], [30, 40]], type: :f32)
+    ids = Nx.tensor([100, 200])
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+    assert :ok == HNSWLib.Index.add_items(index, items, ids: ids)
+
+    assert {:error, "Label not found"} == HNSWLib.Index.mark_deleted(index, 1000)
+  end
+
+  test "HNSWLib.Index.unmark_deleted/2" do
+    space = :ip
+    dim = 2
+    max_elements = 200
+    items = Nx.tensor([[10, 20], [30, 40]], type: :f32)
+    ids = Nx.tensor([100, 200])
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+    assert :ok == HNSWLib.Index.add_items(index, items, ids: ids)
+
+    assert :ok == HNSWLib.Index.mark_deleted(index, 100)
+    assert :ok == HNSWLib.Index.unmark_deleted(index, 100)
+  end
+
+  test "HNSWLib.Index.unmark_deleted/2 when the id does not exist" do
+    space = :ip
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    assert {:error, "Label not found"} == HNSWLib.Index.unmark_deleted(index, 1000)
+  end
+
   test "HNSWLib.Index.resize_index/2" do
     space = :l2
     dim = 2

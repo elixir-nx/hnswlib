@@ -548,14 +548,14 @@ class Index {
     // }
 
 
-    // void markDeleted(size_t label) {
-    //     appr_alg->markDelete(label);
-    // }
+    void markDeleted(size_t label) {
+        appr_alg->markDelete(label);
+    }
 
 
-    // void unmarkDeleted(size_t label) {
-    //     appr_alg->unmarkDelete(label);
-    // }
+    void unmarkDeleted(size_t label) {
+        appr_alg->unmarkDelete(label);
+    }
 
 
     void resizeIndex(size_t new_size) {
