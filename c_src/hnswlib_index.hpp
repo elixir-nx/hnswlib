@@ -568,9 +568,9 @@ class Index {
     }
 
 
-    // size_t getCurrentCount() const {
-    //     return appr_alg->cur_element_count;
-    // }
+    size_t getCurrentCount() const {
+        return appr_alg->cur_element_count;
+    }
 };
 
 #endif  /* HNSWLIB_INDEX_HPP */

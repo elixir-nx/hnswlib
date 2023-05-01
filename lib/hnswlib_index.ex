@@ -169,6 +169,11 @@ defmodule HNSWLib.Index do
     GenServer.call(self.pid, :get_max_elements)
   end
 
+  @spec get_current_count(%T{}) :: {:ok, integer()} | {:error, String.t()}
+  def get_current_count(self = %T{}) do
+    GenServer.call(self.pid, :get_current_count)
+  end
+
   defp verify_data_tensor(self = %T{}, data = %Nx.Tensor{}) do
     case data.shape do
       {rows, features} ->
@@ -257,6 +262,10 @@ defmodule HNSWLib.Index do
   @impl true
   def handle_call(:get_max_elements, _from, self) do
     {:reply, HNSWLib.Nif.get_max_elements(self), self}
+  end
+  @impl true
+  def handle_call(:get_current_count, _from, self) do
+    {:reply, HNSWLib.Nif.get_current_count(self), self}
   end
 
   @impl true

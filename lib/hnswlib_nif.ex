@@ -33,6 +33,8 @@ defmodule HNSWLib.Nif do
 
   def get_max_elements(_self), do: :erlang.nif_error(:not_loaded)
 
+  def get_current_count(_self), do: :erlang.nif_error(:not_loaded)
+
   def get_ids_list(_self), do: :erlang.nif_error(:not_loaded)
 
   def float_size, do: :erlang.nif_error(:not_loaded)

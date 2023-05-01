@@ -380,4 +380,25 @@ defmodule HNSWLib.Index.Test do
 
     assert {:ok, 200} == HNSWLib.Index.get_max_elements(index)
   end
+
+  test "HNSWLib.Index.get_current_count/1 when empty" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    assert {:ok, 0} == HNSWLib.Index.get_current_count(index)
+  end
+
+  test "HNSWLib.Index.get_current_count/1 before and after" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    items = Nx.tensor([[10, 20], [30, 40]], type: :f32)
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    assert {:ok, 0} == HNSWLib.Index.get_current_count(index)
+    assert :ok == HNSWLib.Index.add_items(index, items)
+    assert {:ok, 2} == HNSWLib.Index.get_current_count(index)
+  end
 end
