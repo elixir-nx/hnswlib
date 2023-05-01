@@ -558,9 +558,9 @@ class Index {
     // }
 
 
-    // void resizeIndex(size_t new_size) {
-    //     appr_alg->resizeIndex(new_size);
-    // }
+    void resizeIndex(size_t new_size) {
+        appr_alg->resizeIndex(new_size);
+    }
 
 
     size_t getMaxElements() const {

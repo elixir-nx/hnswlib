@@ -345,6 +345,33 @@ defmodule HNSWLib.Index.Test do
              HNSWLib.Index.add_items(index, items, ids: ids)
   end
 
+  test "HNSWLib.Index.resize_index/2" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    assert {:ok, 200} == HNSWLib.Index.get_max_elements(index)
+
+    max_elements = 400
+    assert :ok == HNSWLib.Index.resize_index(index, max_elements)
+    assert {:ok, 400} == HNSWLib.Index.get_max_elements(index)
+  end
+
+  test "HNSWLib.Index.resize_index/2 with size that exceeds memory capacity" do
+    space = :l2
+    dim = 200
+    max_elements = 2
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    assert {:ok, 2} == HNSWLib.Index.get_max_elements(index)
+
+    max_elements = 999_999_999_999_999_999
+
+    assert {:error, "no enough memory available to resize the index"} ==
+             HNSWLib.Index.resize_index(index, max_elements)
+  end
+
   test "HNSWLib.Index.get_max_elements/1" do
     space = :l2
     dim = 2

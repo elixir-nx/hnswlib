@@ -159,6 +159,11 @@ defmodule HNSWLib.Index do
     end
   end
 
+  @spec resize_index(%T{}, non_neg_integer()) :: :ok | {:error, String.t()}
+  def resize_index(self = %T{}, new_size) when is_integer(new_size) and new_size >= 0 do
+    GenServer.call(self.pid, {:resize_index, new_size})
+  end
+
   @spec get_max_elements(%T{}) :: {:ok, integer()} | {:error, String.t()}
   def get_max_elements(self = %T{}) do
     GenServer.call(self.pid, :get_max_elements)
@@ -242,6 +247,11 @@ defmodule HNSWLib.Index do
     {:reply,
      HNSWLib.Nif.add_items(self, f32_data, ids, num_threads, replace_deleted, rows, features),
      self}
+  end
+
+  @impl true
+  def handle_call({:resize_index, new_size}, _from, self) do
+    {:reply, HNSWLib.Nif.resize_index(self, new_size), self}
   end
 
   @impl true
