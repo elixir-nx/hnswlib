@@ -282,15 +282,6 @@ defmodule HNSWLib.Index.Test do
              HNSWLib.Index.knn_query(index, data, filter: filter)
   end
 
-  test "HNSWLib.Index.get_ids_list/1 when empty" do
-    space = :ip
-    dim = 2
-    max_elements = 200
-    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
-
-    assert {:ok, []} == HNSWLib.Index.get_ids_list(index)
-  end
-
   test "HNSWLib.Index.add_items/3 without specifying ids" do
     space = :l2
     dim = 2
@@ -343,6 +334,36 @@ defmodule HNSWLib.Index.Test do
 
     assert {:error, "expect ids to be a 1D array, got `{2, 1}`"} ==
              HNSWLib.Index.add_items(index, items, ids: ids)
+  end
+
+  test "HNSWLib.Index.get_ids_list/1 when empty" do
+    space = :ip
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    assert {:ok, []} == HNSWLib.Index.get_ids_list(index)
+  end
+
+  test "HNSWLib.Index.get_ef/1 with default init config" do
+    space = :ip
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    assert {:ok, 10} == HNSWLib.Index.get_ef(index)
+  end
+
+  test "HNSWLib.Index.set_ef/2" do
+    space = :ip
+    dim = 2
+    max_elements = 200
+    new_ef = 1000
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    assert {:ok, 10} == HNSWLib.Index.get_ef(index)
+    assert :ok == HNSWLib.Index.set_ef(index, new_ef)
+    assert {:ok, 1000} == HNSWLib.Index.get_ef(index)
   end
 
   test "HNSWLib.Index.resize_index/2" do

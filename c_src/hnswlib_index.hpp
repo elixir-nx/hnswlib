@@ -73,11 +73,11 @@ class Index {
     }
 
 
-    // void set_ef(size_t ef) {
-    //   default_ef = ef;
-    //   if (appr_alg)
-    //       appr_alg->ef_ = ef;
-    // }
+    void set_ef(size_t ef) {
+      default_ef = ef;
+      if (appr_alg)
+          appr_alg->ef_ = ef;
+    }
 
 
     // void set_num_threads(int num_threads) {

@@ -132,6 +132,16 @@ defmodule HNSWLib.Index do
     end
   end
 
+  @spec get_ef(%T{}) :: {:ok, non_neg_integer()} | {:error, String.t()}
+  def get_ef(self = %T{}) do
+    GenServer.call(self.pid, :get_ef)
+  end
+
+  @spec set_ef(%T{}, non_neg_integer()) :: :ok | {:error, String.t()}
+  def set_ef(self = %T{}, new_ef) when is_integer(new_ef) and new_ef >= 0 do
+    GenServer.call(self.pid, {:set_ef, new_ef})
+  end
+
   @spec get_ids_list(%T{}) :: {:ok, [integer()]} | {:error, String.t()}
   def get_ids_list(self = %T{}) do
     GenServer.call(self.pid, :get_ids_list)
@@ -255,6 +265,21 @@ defmodule HNSWLib.Index do
   end
 
   @impl true
+  def handle_call(:get_ids_list, _from, self) do
+    {:reply, HNSWLib.Nif.get_ids_list(self), self}
+  end
+
+  @impl true
+  def handle_call(:get_ef, _from, self) do
+    {:reply, HNSWLib.Nif.get_ef(self), self}
+  end
+
+  @impl true
+  def handle_call({:set_ef, new_ef}, _from, self) do
+    {:reply, HNSWLib.Nif.set_ef(self, new_ef), self}
+  end
+
+  @impl true
   def handle_call({:resize_index, new_size}, _from, self) do
     {:reply, HNSWLib.Nif.resize_index(self, new_size), self}
   end
@@ -263,14 +288,10 @@ defmodule HNSWLib.Index do
   def handle_call(:get_max_elements, _from, self) do
     {:reply, HNSWLib.Nif.get_max_elements(self), self}
   end
+
   @impl true
   def handle_call(:get_current_count, _from, self) do
     {:reply, HNSWLib.Nif.get_current_count(self), self}
-  end
-
-  @impl true
-  def handle_call(:get_ids_list, _from, self) do
-    {:reply, HNSWLib.Nif.get_ids_list(self), self}
   end
 
   @impl true

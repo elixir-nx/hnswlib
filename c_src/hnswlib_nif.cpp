@@ -242,6 +242,41 @@ static ERL_NIF_TERM hsnwlib_get_current_count(ErlNifEnv *env, int argc, const ER
     return erlang::nif::ok(env, erlang::nif::make(env, (uint64_t)count));
 }
 
+static ERL_NIF_TERM hsnwlib_get_ef(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 1) {
+        return erlang::nif::error(env, "expecting 1 argument");
+    }
+
+    NifResHNSWLibIndex * index = nullptr;
+    ERL_NIF_TERM ret, error;
+
+    if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
+        return error;
+    }
+
+    return erlang::nif::ok(env, erlang::nif::make(env, (uint64_t)(index->val->index_inited ? index->val->appr_alg->ef_ : index->val->default_ef)));
+}
+
+static ERL_NIF_TERM hsnwlib_set_ef(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 2) {
+        return erlang::nif::error(env, "expecting 2 arguments");
+    }
+
+    NifResHNSWLibIndex * index = nullptr;
+    size_t new_ef;
+    ERL_NIF_TERM ret, error;
+
+    if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
+        return error;
+    }
+    if (!erlang::nif::get(env, argv[1], &new_ef)) {
+        return erlang::nif::error(env, "expect parameter `new_ef` to be a non-negative integer");
+    }
+
+    index->val->set_ef(new_ef);
+    return erlang::nif::ok(env);
+}
+
 static ERL_NIF_TERM hnswlib_get_ids_list(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 1) {
         return erlang::nif::error(env, "expecting 1 argument");
@@ -288,10 +323,12 @@ static ErlNifFunc nif_functions[] = {
     {"new", 7, hnswlib_new, 0},
     {"knn_query", 7, hnswlib_knn_query, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"add_items", 7, hnswlib_add_items, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"get_ef", 1, hsnwlib_get_ef, 0},
+    {"set_ef", 2, hsnwlib_set_ef, 0},
+    {"get_ids_list", 1, hnswlib_get_ids_list, 0},
     {"resize_index", 2, hsnwlib_resize_index, 0},
     {"get_max_elements", 1, hsnwlib_get_max_elements, 0},
     {"get_current_count", 1, hsnwlib_get_current_count, 0},
-    {"get_ids_list", 1, hnswlib_get_ids_list, 0},
     {"float_size", 0, hnswlib_float_size, 0}
 };
 
