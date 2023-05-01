@@ -295,12 +295,26 @@ defmodule HNSWLib.Index.Test do
     assert {:ok, [1, 0]} == HNSWLib.Index.get_ids_list(index)
   end
 
-  test "HNSWLib.Index.add_items/3 with specifying ids" do
+  test "HNSWLib.Index.add_items/3 with specifying ids (Nx.Tensor)" do
     space = :l2
     dim = 2
     max_elements = 200
     items = Nx.tensor([[10, 20], [30, 40]], type: :f32)
     ids = Nx.tensor([100, 200])
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    assert {:ok, []} == HNSWLib.Index.get_ids_list(index)
+
+    assert :ok == HNSWLib.Index.add_items(index, items, ids: ids)
+    assert {:ok, [200, 100]} == HNSWLib.Index.get_ids_list(index)
+  end
+
+  test "HNSWLib.Index.add_items/3 with specifying ids (list)" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    items = Nx.tensor([[10, 20], [30, 40]], type: :f32)
+    ids = [100, 200]
     {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
 
     assert {:ok, []} == HNSWLib.Index.get_ids_list(index)

@@ -106,7 +106,7 @@ class Index {
     }
 
 
-    void addItems(float * input, size_t rows, size_t features, uint64_t * ids_ = nullptr, int num_threads = -1, bool replace_deleted = false) {
+    void addItems(float * input, size_t rows, size_t features, const std::vector<uint64_t>& ids, int num_threads = -1, bool replace_deleted = false) {
         if (num_threads <= 0)
             num_threads = num_threads_default;
 
@@ -116,11 +116,6 @@ class Index {
         // avoid using threads when the number of additions is small:
         if (rows <= num_threads * 4) {
             num_threads = 1;
-        }
-
-        std::vector<uint64_t> ids;
-        if (ids_) {
-            ids = std::vector<uint64_t>(ids_, ids_ + rows);
         }
 
         {

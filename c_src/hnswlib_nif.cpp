@@ -133,7 +133,8 @@ static ERL_NIF_TERM hnswlib_add_items(ErlNifEnv *env, int argc, const ERL_NIF_TE
 
     NifResHNSWLibIndex * index = nullptr;
     ErlNifBinary f32_data;
-    ErlNifBinary ids;
+    ErlNifBinary ids_binary;
+    std::vector<uint64_t> ids;
     ssize_t num_threads;
     bool replace_deleted;
     size_t rows, features;
@@ -149,16 +150,20 @@ static ERL_NIF_TERM hnswlib_add_items(ErlNifEnv *env, int argc, const ERL_NIF_TE
         return erlang::nif::error(env, (
             std::string{"expect `f32_data`'s size to be a multiple of "} + std::to_string(sizeof(float)) + " (sizeof(float)), got `" + std::to_string(f32_data.size) + "` bytes").c_str());
     }
-    if (!enif_inspect_binary(env, argv[2], &ids)) {
+    if (!enif_inspect_binary(env, argv[2], &ids_binary)) {
         if (!erlang::nif::check_nil(env, argv[2])) {
-            return erlang::nif::error(env, "expect `ids` to be a binary or `nil`");
-        } else {
-            ids.data = nullptr;
+            if (!erlang::nif::get_list(env, argv[2], ids)) {
+                return erlang::nif::error(env, "expect `ids` to be either a binary, `nil`, or a list of non-negative integers.");
+            }
         }
     } else {
-        if (ids.size % sizeof(uint64_t) != 0) {
+        if (ids_binary.size % sizeof(uint64_t) != 0) {
             return erlang::nif::error(env, (
-                std::string{"expect `ids`'s size to be a multiple of "} + std::to_string(sizeof(uint64_t)) + " (sizeof(uint64_t)), got `" + std::to_string(ids.size) + "` bytes").c_str());
+                std::string{"expect `ids`'s size to be a multiple of "} + std::to_string(sizeof(uint64_t)) + " (sizeof(uint64_t)), got `" + std::to_string(ids_binary.size) + "` bytes").c_str());
+        } else {
+            uint64_t * ptr = (uint64_t *)ids_binary.data;
+            size_t count = ids_binary.size / sizeof(uint64_t);
+            ids = std::vector<uint64_t>{ptr, ptr + count};
         }
     }
     if (!erlang::nif::get(env, argv[3], &num_threads)) {
@@ -175,7 +180,7 @@ static ERL_NIF_TERM hnswlib_add_items(ErlNifEnv *env, int argc, const ERL_NIF_TE
     }
 
     try {
-        index->val->addItems((float *)f32_data.data, rows, features, (uint64_t *)ids.data, num_threads, replace_deleted);
+        index->val->addItems((float *)f32_data.data, rows, features, ids, num_threads, replace_deleted);
     } catch (std::runtime_error &err) {
         return erlang::nif::error(env, err.what());
     }
@@ -447,8 +452,9 @@ static ERL_NIF_TERM hnswlib_get_items(ErlNifEnv *env, int argc, const ERL_NIF_TE
             return erlang::nif::error(env, (
                 std::string{"expect `ids`'s size to be a multiple of "} + std::to_string(sizeof(uint64_t)) + " (sizeof(uint64_t)), got `" + std::to_string(ids_binary.size) + "` bytes").c_str());
         } else {
+            uint64_t * ptr = (uint64_t *)ids_binary.data;
             size_t count = ids_binary.size / sizeof(uint64_t);
-            ids = std::vector<uint64_t>{ids_binary.data, ids_binary.data + count};
+            ids = std::vector<uint64_t>{ptr, ptr + count};
         }
     }
     if (!erlang::nif::get_atom(env, argv[2], return_type)) {
