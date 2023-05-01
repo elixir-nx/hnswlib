@@ -257,6 +257,20 @@ int make(ErlNifEnv *env, const std::vector<int64_t>& array, ERL_NIF_TERM &out) {
     return make_i64_list_from_c_array(env, count, data, out);
 }
 
+int make(ErlNifEnv *env, const std::vector<size_t>& array, ERL_NIF_TERM &out) {
+    size_t count = array.size();
+    if (sizeof(size_t) == 8) {
+        uint64_t * data = (uint64_t *)array.data();
+        return make_u64_list_from_c_array(env, count, data, out);
+    } else if (sizeof(size_t) == 4) {
+        uint32_t * data = (uint32_t *)array.data();
+        return make_u32_list_from_c_array(env, count, data, out);
+    } else {
+        // error
+        return 1;
+    }
+}
+
 int make(ErlNifEnv *env, const std::vector<float>& array, ERL_NIF_TERM &out) {
     size_t count = array.size();
     float * data = (float *)array.data();
