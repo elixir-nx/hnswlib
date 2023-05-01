@@ -26,6 +26,9 @@ defmodule HNSWLib.Nif do
   def knn_query(_self, _data, _k, _num_threads, _filter, _rows, _features),
     do: :erlang.nif_error(:not_loaded)
 
+  def add_items(_self, _f32_data, _ids, _num_threads, _replace_deleted, _rows, _features),
+    do: :erlang.nif_error(:not_loaded)
+
   def get_ids_list(_self), do: :erlang.nif_error(:not_loaded)
 
   def float_size, do: :erlang.nif_error(:not_loaded)

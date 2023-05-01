@@ -82,7 +82,7 @@ static ERL_NIF_TERM hnswlib_knn_query(ErlNifEnv *env, int argc, const ERL_NIF_TE
     NifResHNSWLibIndex * index = nullptr;
     ErlNifBinary data;
     size_t k;
-    ssize_t num_threads; 
+    ssize_t num_threads;
     ERL_NIF_TERM filter;
     size_t rows, features;
     ERL_NIF_TERM ret, error;
@@ -123,6 +123,63 @@ static ERL_NIF_TERM hnswlib_knn_query(ErlNifEnv *env, int argc, const ERL_NIF_TE
     float *data_d;
 
     enif_free(process);
+    return erlang::nif::ok(env);
+}
+
+static ERL_NIF_TERM hnswlib_add_items(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 7) {
+        return erlang::nif::error(env, "expecting 7 arguments");
+    }
+
+    NifResHNSWLibIndex * index = nullptr;
+    ErlNifBinary f32_data;
+    ErlNifBinary ids;
+    ssize_t num_threads;
+    bool replace_deleted;
+    size_t rows, features;
+    ERL_NIF_TERM ret, error;
+
+    if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
+        return error;
+    }
+    if (!enif_inspect_binary(env, argv[1], &f32_data)) {
+        return erlang::nif::error(env, "expect `f32_data` to be a binary");
+    }
+    if (f32_data.size % sizeof(float) != 0) {
+        return erlang::nif::error(env, (
+            std::string{"expect `f32_data`'s size to be a multiple of "} + std::to_string(sizeof(float)) + " (sizeof(float)), got `" + std::to_string(f32_data.size) + "` bytes").c_str());
+    }
+    if (!enif_inspect_binary(env, argv[2], &ids)) {
+        if (!erlang::nif::check_nil(env, argv[2])) {
+            return erlang::nif::error(env, "expect `ids` to be a binary or `nil`");
+        } else {
+            ids.data = nullptr;
+        }
+    } else {
+        if (ids.size % sizeof(uint64_t) != 0) {
+            return erlang::nif::error(env, (
+                std::string{"expect `ids`'s size to be a multiple of "} + std::to_string(sizeof(uint64_t)) + " (sizeof(uint64_t)), got `" + std::to_string(ids.size) + "` bytes").c_str());
+        }
+    }
+    if (!erlang::nif::get(env, argv[3], &num_threads)) {
+        return erlang::nif::error(env, "expect parameter `num_threads` to be an integer");
+    }
+    if (!erlang::nif::get(env, argv[4], &replace_deleted)) {
+        return erlang::nif::error(env, "expect parameter `replace_deleted` to be a boolean");
+    }
+    if (!erlang::nif::get(env, argv[5], &rows)) {
+        return erlang::nif::error(env, "expect parameter `rows` to be a non-negative integer");
+    }
+    if (!erlang::nif::get(env, argv[6], &features)) {
+        return erlang::nif::error(env, "expect parameter `features` to be a non-negative integer");
+    }
+
+    try {
+        index->val->addItems((float *)f32_data.data, rows, features, (uint64_t *)ids.data, num_threads, replace_deleted);
+    } catch (std::runtime_error &err) {
+        return erlang::nif::error(env, err.what());
+    }
+
     return erlang::nif::ok(env);
 }
 
@@ -171,6 +228,7 @@ static int on_upgrade(ErlNifEnv *, void **, void **, ERL_NIF_TERM) {
 static ErlNifFunc nif_functions[] = {
     {"new", 7, hnswlib_new, 0},
     {"knn_query", 7, hnswlib_knn_query, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"add_items", 7, hnswlib_add_items, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"get_ids_list", 1, hnswlib_get_ids_list, 0},
     {"float_size", 0, hnswlib_float_size, 0}
 };

@@ -235,7 +235,11 @@ defmodule HNSWLib.Index.Test do
     dim = 2
     max_elements = 200
     {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
-    data = [<<42::float-32, 42::float-32, 42::float-32>>, <<42::float-32, 42::float-32, 42::float-32>>]
+
+    data = [
+      <<42::float-32, 42::float-32, 42::float-32>>,
+      <<42::float-32, 42::float-32, 42::float-32>>
+    ]
 
     assert {:error, "Wrong dimensionality of the vectors, expect `2`, got `3`"} ==
              HNSWLib.Index.knn_query(index, data)
@@ -285,5 +289,59 @@ defmodule HNSWLib.Index.Test do
     {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
 
     assert {:ok, []} == HNSWLib.Index.get_ids_list(index)
+  end
+
+  test "HNSWLib.Index.add_items/3 without specifying ids" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    items = Nx.tensor([[10, 20], [30, 40]], type: :f32)
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    assert {:ok, []} == HNSWLib.Index.get_ids_list(index)
+
+    assert :ok == HNSWLib.Index.add_items(index, items)
+    assert {:ok, [1, 0]} == HNSWLib.Index.get_ids_list(index)
+  end
+
+  test "HNSWLib.Index.add_items/3 with specifying ids" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    items = Nx.tensor([[10, 20], [30, 40]], type: :f32)
+    ids = Nx.tensor([100, 200])
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    assert {:ok, []} == HNSWLib.Index.get_ids_list(index)
+
+    assert :ok == HNSWLib.Index.add_items(index, items, ids: ids)
+    assert {:ok, [200, 100]} == HNSWLib.Index.get_ids_list(index)
+  end
+
+  test "HNSWLib.Index.add_items/3 with wrong dim of data tensor" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    items = Nx.tensor([[10, 20, 300], [30, 40, 500]], type: :f32)
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    assert {:ok, []} == HNSWLib.Index.get_ids_list(index)
+
+    assert {:error, "Wrong dimensionality of the vectors, expect `2`, got `3`"} ==
+             HNSWLib.Index.add_items(index, items)
+  end
+
+  test "HNSWLib.Index.add_items/3 with wrong dim of ids" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    items = Nx.tensor([[10, 20], [30, 40]], type: :f32)
+    ids = Nx.tensor([[100], [200]])
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    assert {:ok, []} == HNSWLib.Index.get_ids_list(index)
+
+    assert {:error, "expect ids to be a 1D array, got `{2, 1}`"} ==
+             HNSWLib.Index.add_items(index, items, ids: ids)
   end
 end

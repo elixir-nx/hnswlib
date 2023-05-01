@@ -85,6 +85,7 @@ defmodule HNSWLib.Index do
          "vector feature size should be a multiple of #{HNSWLib.Nif.float_size()} (sizeof(float))"}
       else
         features = trunc(byte_size(data) / float_size())
+
         if features != self.dim do
           {:error, "Wrong dimensionality of the vectors, expect `#{self.dim}`, got `#{features}`"}
         else
@@ -122,34 +123,9 @@ defmodule HNSWLib.Index do
   def knn_query(self = %T{}, data = %Nx.Tensor{}, opts) do
     with {:ok, k} <- Helper.get_keyword(opts, :k, :pos_integer, 1),
          {:ok, num_threads} <- Helper.get_keyword(opts, :num_threads, :integer, -1),
-         {:ok, filter} <- Helper.get_keyword(opts, :filter, {:function, 1}, nil, true) do
-      case data.shape do
-        {rows, features} ->
-          if features != self.dim do
-            {:error, "Wrong dimensionality of the vectors, expect `#{self.dim}`, got `#{features}`"}
-          else
-            GenServer.call(
-              self.pid,
-              {:knn_query, Nx.to_binary(Nx.as_type(data, :f32)), k, num_threads, filter, rows,
-               features}
-            )
-          end
-
-        {features} ->
-          if features != self.dim do
-            {:error, "Wrong dimensionality of the vectors, expect `#{self.dim}`, got `#{features}`"}
-          else
-            GenServer.call(
-              self.pid,
-              {:knn_query, Nx.to_binary(Nx.as_type(data, :f32)), k, num_threads, filter, 1,
-               features}
-            )
-          end
-
-        shape ->
-          {:error,
-           "Input vector data wrong shape. Number of dimensions #{tuple_size(shape)}. Data must be a 1D or 2D array."}
-      end
+         {:ok, filter} <- Helper.get_keyword(opts, :filter, {:function, 1}, nil, true),
+         {:ok, f32_data, rows, features} <- verify_data_tensor(self, data) do
+      GenServer.call(self.pid, {:knn_query, f32_data, k, num_threads, filter, rows, features})
     else
       {:error, reason} ->
         {:error, reason}
@@ -159,6 +135,64 @@ defmodule HNSWLib.Index do
   @spec get_ids_list(%T{}) :: {:ok, [integer()]} | {:error, String.t()}
   def get_ids_list(self = %T{}) do
     GenServer.call(self.pid, :get_ids_list)
+  end
+
+  @spec add_items(%T{}, Nx.Tensor.t() | binary() | [binary()], [
+          {:ids, Nx.Tensor.t() | nil},
+          {:num_threads, integer()},
+          {:replace_deleted, false}
+        ]) :: :ok | {:error, String.t()}
+  def add_items(self, data, opts \\ [])
+
+  def add_items(self = %T{}, data = %Nx.Tensor{}, opts) when is_list(opts) do
+    with {:ok, ids} <- normalize_ids(opts[:ids]),
+         {:ok, num_threads} <- Helper.get_keyword(opts, :num_threads, :integer, -1),
+         {:ok, replace_deleted} <- Helper.get_keyword(opts, :replace_deleted, :boolean, false),
+         {:ok, f32_data, rows, features} <- verify_data_tensor(self, data) do
+      GenServer.call(
+        self.pid,
+        {:add_items, f32_data, ids, num_threads, replace_deleted, rows, features}
+      )
+    else
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp verify_data_tensor(self = %T{}, data = %Nx.Tensor{}) do
+    case data.shape do
+      {rows, features} ->
+        if features != self.dim do
+          {:error, "Wrong dimensionality of the vectors, expect `#{self.dim}`, got `#{features}`"}
+        else
+          {:ok, Nx.to_binary(Nx.as_type(data, :f32)), rows, features}
+        end
+
+      {features} ->
+        if features != self.dim do
+          {:error, "Wrong dimensionality of the vectors, expect `#{self.dim}`, got `#{features}`"}
+        else
+          {:ok, Nx.to_binary(Nx.as_type(data, :f32)), 1, features}
+        end
+
+      shape ->
+        {:error,
+         "Input vector data wrong shape. Number of dimensions #{tuple_size(shape)}. Data must be a 1D or 2D array."}
+    end
+  end
+
+  defp normalize_ids(ids = %Nx.Tensor{}) do
+    case ids.shape do
+      {_} ->
+        {:ok, Nx.to_binary(Nx.as_type(ids, :u64))}
+
+      shape ->
+        {:error, "expect ids to be a 1D array, got `#{inspect(shape)}`"}
+    end
+  end
+
+  defp normalize_ids(nil) do
+    {:ok, nil}
   end
 
   defp float_size do
@@ -187,16 +221,27 @@ defmodule HNSWLib.Index do
   end
 
   @impl true
-  def handle_call(:get_ids_list, _from, self) do
-    {:reply, HNSWLib.Nif.get_ids_list(self), self}
-  end
-
-  @impl true
   def handle_call({:knn_query, data, k, num_threads, filter, rows, features}, _from, self) do
     case HNSWLib.Nif.knn_query(self, data, k, num_threads, filter, rows, features) do
       any ->
         {:reply, any, self}
     end
+  end
+
+  @impl true
+  def handle_call(
+        {:add_items, f32_data, ids, num_threads, replace_deleted, rows, features},
+        _from,
+        self
+      ) do
+    {:reply,
+     HNSWLib.Nif.add_items(self, f32_data, ids, num_threads, replace_deleted, rows, features),
+     self}
+  end
+
+  @impl true
+  def handle_call(:get_ids_list, _from, self) do
+    {:reply, HNSWLib.Nif.get_ids_list(self), self}
   end
 
   @impl true

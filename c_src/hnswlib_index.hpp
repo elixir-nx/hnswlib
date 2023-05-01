@@ -101,69 +101,67 @@ class Index {
     // }
 
 
-    // void normalize_vector(float* data, float* norm_array) {
-    //     float norm = 0.0f;
-    //     for (int i = 0; i < dim; i++)
-    //         norm += data[i] * data[i];
-    //     norm = 1.0f / (sqrtf(norm) + 1e-30f);
-    //     for (int i = 0; i < dim; i++)
-    //         norm_array[i] = data[i] * norm;
-    // }
+    void normalize_vector(float* data, float* norm_array) {
+        float norm = 0.0f;
+        for (int i = 0; i < dim; i++)
+            norm += data[i] * data[i];
+        norm = 1.0f / (sqrtf(norm) + 1e-30f);
+        for (int i = 0; i < dim; i++)
+            norm_array[i] = data[i] * norm;
+    }
 
 
-    // void addItems(py::object input, py::object ids_ = py::none(), int num_threads = -1, bool replace_deleted = false) {
-    //     py::array_t < dist_t, py::array::c_style | py::array::forcecast > items(input);
-    //     auto buffer = items.request();
-    //     if (num_threads <= 0)
-    //         num_threads = num_threads_default;
+    void addItems(float * input, size_t rows, size_t features, uint64_t * ids_ = nullptr, int num_threads = -1, bool replace_deleted = false) {
+        if (num_threads <= 0)
+            num_threads = num_threads_default;
 
-    //     size_t rows, features;
-    //     get_input_array_shapes(buffer, &rows, &features);
+        if (features != dim)
+            throw std::runtime_error("Wrong dimensionality of the vectors");
 
-    //     if (features != dim)
-    //         throw std::runtime_error("Wrong dimensionality of the vectors");
+        // avoid using threads when the number of additions is small:
+        if (rows <= num_threads * 4) {
+            num_threads = 1;
+        }
 
-    //     // avoid using threads when the number of additions is small:
-    //     if (rows <= num_threads * 4) {
-    //         num_threads = 1;
-    //     }
+        std::vector<uint64_t> ids;
+        if (ids_) {
+            ids = std::vector<uint64_t>(ids_, ids_ + rows);
+        }
 
-    //     std::vector<size_t> ids = get_input_ids_and_check_shapes(ids_, rows);
+        {
+            int start = 0;
+            if (!ep_added) {
+                uint64_t id = ids.size() ? ids.at(0) : (cur_l);
+                float* vector_data = input;
+                std::vector<float> norm_array(dim);
+                if (normalize) {
+                    normalize_vector(vector_data, norm_array.data());
+                    vector_data = norm_array.data();
+                }
+                appr_alg->addPoint((void *)vector_data, (size_t)id, replace_deleted);
+                start = 1;
+                ep_added = true;
+            }
 
-    //     {
-    //         int start = 0;
-    //         if (!ep_added) {
-    //             size_t id = ids.size() ? ids.at(0) : (cur_l);
-    //             float* vector_data = (float*)items.data(0);
-    //             std::vector<float> norm_array(dim);
-    //             if (normalize) {
-    //                 normalize_vector(vector_data, norm_array.data());
-    //                 vector_data = norm_array.data();
-    //             }
-    //             appr_alg->addPoint((void*)vector_data, (size_t)id, replace_deleted);
-    //             start = 1;
-    //             ep_added = true;
-    //         }
+            if (normalize == false) {
+                ParallelFor(start, rows, num_threads, [&](size_t row, size_t threadId) {
+                    uint64_t id = ids.size() ? ids.at(row) : (cur_l + row);
+                    appr_alg->addPoint((void *)(input + row * dim), (size_t)id, replace_deleted);
+                    });
+            } else {
+                std::vector<float> norm_array(num_threads * dim);
+                ParallelFor(start, rows, num_threads, [&](size_t row, size_t threadId) {
+                    // normalize vector:
+                    size_t start_idx = threadId * dim;
+                    normalize_vector((float *)(input + row * dim), (norm_array.data() + start_idx));
 
-    //         if (normalize == false) {
-    //             ParallelFor(start, rows, num_threads, [&](size_t row, size_t threadId) {
-    //                 size_t id = ids.size() ? ids.at(row) : (cur_l + row);
-    //                 appr_alg->addPoint((void*)items.data(row), (size_t)id, replace_deleted);
-    //                 });
-    //         } else {
-    //             std::vector<float> norm_array(num_threads * dim);
-    //             ParallelFor(start, rows, num_threads, [&](size_t row, size_t threadId) {
-    //                 // normalize vector:
-    //                 size_t start_idx = threadId * dim;
-    //                 normalize_vector((float*)items.data(row), (norm_array.data() + start_idx));
-
-    //                 size_t id = ids.size() ? ids.at(row) : (cur_l + row);
-    //                 appr_alg->addPoint((void*)(norm_array.data() + start_idx), (size_t)id, replace_deleted);
-    //                 });
-    //         }
-    //         cur_l += rows;
-    //     }
-    // }
+                    uint64_t id = ids.size() ? ids.at(row) : (cur_l + row);
+                    appr_alg->addPoint((void *)(norm_array.data() + start_idx), (size_t)id, replace_deleted);
+                    });
+            }
+            cur_l += rows;
+        }
+    }
 
 
     // std::vector<std::vector<data_t>> getDataReturnList(py::object ids_ = py::none()) {
