@@ -183,6 +183,33 @@ static ERL_NIF_TERM hnswlib_add_items(ErlNifEnv *env, int argc, const ERL_NIF_TE
     return erlang::nif::ok(env);
 }
 
+static ERL_NIF_TERM hsnwlib_save_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 2) {
+        return erlang::nif::error(env, "expecting 2 arguments");
+    }
+
+    NifResHNSWLibIndex * index = nullptr;
+    std::string path;
+    ERL_NIF_TERM ret, error;
+
+    if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
+        return error;
+    }
+    if (!erlang::nif::get(env, argv[1], path)) {
+        return erlang::nif::error(env, "expect parameter `path` to be a string");
+    }
+
+    try {
+        index->val->saveIndex(path);
+    } catch (std::runtime_error &err) {
+        return erlang::nif::error(env, err.what());
+    } catch (...) {
+        return erlang::nif::error(env, "cannot save index: unknown reason");
+    }
+
+    return erlang::nif::ok(env);
+}
+
 static ERL_NIF_TERM hsnwlib_mark_deleted(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 2) {
         return erlang::nif::error(env, "expecting 2 arguments");
@@ -327,26 +354,6 @@ static ERL_NIF_TERM hsnwlib_set_ef(ErlNifEnv *env, int argc, const ERL_NIF_TERM 
     return erlang::nif::ok(env);
 }
 
-static ERL_NIF_TERM hnswlib_get_ids_list(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    if (argc != 1) {
-        return erlang::nif::error(env, "expecting 1 argument");
-    }
-
-    NifResHNSWLibIndex * index = nullptr;
-    ERL_NIF_TERM ret, error;
-
-    if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
-        return error;
-    }
-
-    std::vector<hnswlib::labeltype> ids = index->val->getIdsList();
-    if (erlang::nif::make(env, ids, ret)) {
-        return erlang::nif::error(env, "cannot allocate enough memory to hold the list");
-    }
-
-    return erlang::nif::ok(env, ret);
-}
-
 static ERL_NIF_TERM hsnwlib_get_num_threads(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 1) {
         return erlang::nif::error(env, "expecting 1 argument");
@@ -380,6 +387,26 @@ static ERL_NIF_TERM hsnwlib_set_num_threads(ErlNifEnv *env, int argc, const ERL_
     index->val->num_threads_default = new_num_threads;
 
     return erlang::nif::ok(env);
+}
+
+static ERL_NIF_TERM hnswlib_get_ids_list(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 1) {
+        return erlang::nif::error(env, "expecting 1 argument");
+    }
+
+    NifResHNSWLibIndex * index = nullptr;
+    ERL_NIF_TERM ret, error;
+
+    if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
+        return error;
+    }
+
+    std::vector<hnswlib::labeltype> ids = index->val->getIdsList();
+    if (erlang::nif::make(env, ids, ret)) {
+        return erlang::nif::error(env, "cannot allocate enough memory to hold the list");
+    }
+
+    return erlang::nif::ok(env, ret);
 }
 
 static ERL_NIF_TERM hsnwlib_get_ef_construction(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
@@ -441,13 +468,14 @@ static ErlNifFunc nif_functions[] = {
     {"get_ids_list", 1, hnswlib_get_ids_list, 0},
     {"get_ef", 1, hsnwlib_get_ef, 0},
     {"set_ef", 2, hsnwlib_set_ef, 0},
+    {"get_num_threads", 1, hsnwlib_get_num_threads, 0},
+    {"set_num_threads", 2, hsnwlib_set_num_threads, 0},
+    {"save_index", 2, hsnwlib_save_index, ERL_NIF_DIRTY_JOB_IO_BOUND},
     {"mark_deleted", 2, hsnwlib_mark_deleted, 0},
     {"unmark_deleted", 2, hsnwlib_unmark_deleted, 0},
     {"resize_index", 2, hsnwlib_resize_index, 0},
     {"get_max_elements", 1, hsnwlib_get_max_elements, 0},
     {"get_current_count", 1, hsnwlib_get_current_count, 0},
-    {"get_num_threads", 1, hsnwlib_get_num_threads, 0},
-    {"set_num_threads", 2, hsnwlib_set_num_threads, 0},
     {"get_ef_construction", 1, hsnwlib_get_ef_construction, 0},
     {"get_m", 1, hsnwlib_get_m, 0},
     {"float_size", 0, hnswlib_float_size, 0}

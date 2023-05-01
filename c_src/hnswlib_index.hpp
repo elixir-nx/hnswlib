@@ -85,9 +85,9 @@ class Index {
     // }
 
 
-    // void saveIndex(const std::string &path_to_index) {
-    //     appr_alg->saveIndex(path_to_index);
-    // }
+    void saveIndex(const std::string &path_to_index) {
+        appr_alg->saveIndex(path_to_index);
+    }
 
 
     // void loadIndex(const std::string &path_to_index, size_t max_elements, bool allow_replace_deleted) {

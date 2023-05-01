@@ -35,6 +35,12 @@ defmodule HNSWLib.Nif do
 
   def set_ef(_self, _new_ef), do: :erlang.nif_error(:not_loaded)
 
+  def get_num_threads(_self), do: :erlang.nif_error(:not_loaded)
+
+  def set_num_threads(_self, _new_num_threads), do: :erlang.nif_error(:not_loaded)
+
+  def save_index(_self, _path), do: :erlang.nif_error(:not_loaded)
+
   def mark_deleted(_self, _label), do: :erlang.nif_error(:not_loaded)
 
   def unmark_deleted(_self, _label), do: :erlang.nif_error(:not_loaded)
@@ -44,10 +50,6 @@ defmodule HNSWLib.Nif do
   def get_max_elements(_self), do: :erlang.nif_error(:not_loaded)
 
   def get_current_count(_self), do: :erlang.nif_error(:not_loaded)
-
-  def get_num_threads(_self), do: :erlang.nif_error(:not_loaded)
-
-  def set_num_threads(_self, _new_num_threads), do: :erlang.nif_error(:not_loaded)
 
   def get_ef_construction(_self), do: :erlang.nif_error(:not_loaded)
 

@@ -147,6 +147,21 @@ defmodule HNSWLib.Index do
     GenServer.call(self.pid, {:set_ef, new_ef})
   end
 
+  @spec get_num_threads(%T{}) :: {:ok, integer()} | {:error, String.t()}
+  def get_num_threads(self = %T{}) do
+    GenServer.call(self.pid, :get_num_threads)
+  end
+
+  @spec set_num_threads(%T{}, integer()) :: {:ok, integer()} | {:error, String.t()}
+  def set_num_threads(self = %T{}, new_num_threads) do
+    GenServer.call(self.pid, {:set_num_threads, new_num_threads})
+  end
+
+  @spec save_index(%T{}, Path.t()) :: {:ok, integer()} | {:error, String.t()}
+  def save_index(self = %T{}, path) when is_binary(path) do
+    GenServer.call(self.pid, {:save_index, path})
+  end
+
   @spec mark_deleted(%T{}, non_neg_integer()) :: :ok | {:error, String.t()}
   def mark_deleted(self = %T{}, label) when is_integer(label) and label >= 0 do
     GenServer.call(self.pid, {:mark_deleted, label})
@@ -192,16 +207,6 @@ defmodule HNSWLib.Index do
   @spec get_current_count(%T{}) :: {:ok, integer()} | {:error, String.t()}
   def get_current_count(self = %T{}) do
     GenServer.call(self.pid, :get_current_count)
-  end
-
-  @spec get_num_threads(%T{}) :: {:ok, integer()} | {:error, String.t()}
-  def get_num_threads(self = %T{}) do
-    GenServer.call(self.pid, :get_num_threads)
-  end
-
-  @spec set_num_threads(%T{}, integer()) :: {:ok, integer()} | {:error, String.t()}
-  def set_num_threads(self = %T{}, new_num_threads) do
-    GenServer.call(self.pid, {:set_num_threads, new_num_threads})
   end
 
   @spec get_ef_construction(%T{}) :: {:ok, integer()} | {:error, String.t()}
@@ -310,6 +315,21 @@ defmodule HNSWLib.Index do
   end
 
   @impl true
+  def handle_call(:get_num_threads, _from, self) do
+    {:reply, HNSWLib.Nif.get_num_threads(self), self}
+  end
+
+  @impl true
+  def handle_call({:set_num_threads, new_num_threads}, _from, self) do
+    {:reply, HNSWLib.Nif.set_num_threads(self, new_num_threads), self}
+  end
+
+  @impl true
+  def handle_call({:save_index, path}, _from, self) do
+    {:reply, HNSWLib.Nif.save_index(self, path), self}
+  end
+
+  @impl true
   def handle_call({:mark_deleted, label}, _from, self) do
     {:reply, HNSWLib.Nif.mark_deleted(self, label), self}
   end
@@ -332,16 +352,6 @@ defmodule HNSWLib.Index do
   @impl true
   def handle_call(:get_current_count, _from, self) do
     {:reply, HNSWLib.Nif.get_current_count(self), self}
-  end
-
-  @impl true
-  def handle_call(:get_num_threads, _from, self) do
-    {:reply, HNSWLib.Nif.get_num_threads(self), self}
-  end
-
-  @impl true
-  def handle_call({:set_num_threads, new_num_threads}, _from, self) do
-    {:reply, HNSWLib.Nif.set_num_threads(self, new_num_threads), self}
   end
 
   @impl true

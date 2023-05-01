@@ -366,6 +366,49 @@ defmodule HNSWLib.Index.Test do
     assert {:ok, 1000} == HNSWLib.Index.get_ef(index)
   end
 
+  test "HNSWLib.Index.get_num_threads/1 with default config" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    {:ok, num_threads} = HNSWLib.Index.get_num_threads(index)
+    assert num_threads == System.schedulers_online()
+  end
+
+  test "HNSWLib.Index.set_num_threads/2" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    {:ok, num_threads} = HNSWLib.Index.get_num_threads(index)
+    assert num_threads == System.schedulers_online()
+
+    :ok = HNSWLib.Index.set_num_threads(index, 2)
+    {:ok, num_threads} = HNSWLib.Index.get_num_threads(index)
+    assert num_threads == 2
+  end
+
+  test "HNSWLib.Index.save_index/2" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    items = Nx.tensor([[10, 20], [30, 40]], type: :f32)
+    ids = Nx.tensor([100, 200])
+    save_to = Path.join([__DIR__, "saved_index.bin"])
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+    :ok = HNSWLib.Index.add_items(index, items, ids: ids)
+
+    # ensure file does not exist
+    File.rm(save_to)
+    assert :ok == HNSWLib.Index.save_index(index, save_to)
+    assert File.exists?(save_to)
+
+    # cleanup
+    File.rm(save_to)
+  end
+
   test "HNSWLib.Index.mark_deleted/2" do
     space = :ip
     dim = 2
@@ -467,30 +510,6 @@ defmodule HNSWLib.Index.Test do
     assert {:ok, 0} == HNSWLib.Index.get_current_count(index)
     assert :ok == HNSWLib.Index.add_items(index, items)
     assert {:ok, 2} == HNSWLib.Index.get_current_count(index)
-  end
-
-  test "HNSWLib.Index.get_num_threads/1 with default config" do
-    space = :l2
-    dim = 2
-    max_elements = 200
-    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
-
-    {:ok, num_threads} = HNSWLib.Index.get_num_threads(index)
-    assert num_threads == System.schedulers_online()
-  end
-
-  test "HNSWLib.Index.set_num_threads/2" do
-    space = :l2
-    dim = 2
-    max_elements = 200
-    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
-
-    {:ok, num_threads} = HNSWLib.Index.get_num_threads(index)
-    assert num_threads == System.schedulers_online()
-
-    :ok = HNSWLib.Index.set_num_threads(index, 2)
-    {:ok, num_threads} = HNSWLib.Index.get_num_threads(index)
-    assert num_threads == 2
   end
 
   test "HNSWLib.Index.get_ef_construction/1 with default config" do
