@@ -159,6 +159,11 @@ defmodule HNSWLib.Index do
     end
   end
 
+  @spec get_max_elements(%T{}) :: {:ok, integer()} | {:error, String.t()}
+  def get_max_elements(self = %T{}) do
+    GenServer.call(self.pid, :get_max_elements)
+  end
+
   defp verify_data_tensor(self = %T{}, data = %Nx.Tensor{}) do
     case data.shape do
       {rows, features} ->
@@ -237,6 +242,11 @@ defmodule HNSWLib.Index do
     {:reply,
      HNSWLib.Nif.add_items(self, f32_data, ids, num_threads, replace_deleted, rows, features),
      self}
+  end
+
+  @impl true
+  def handle_call(:get_max_elements, _from, self) do
+    {:reply, HNSWLib.Nif.get_max_elements(self), self}
   end
 
   @impl true

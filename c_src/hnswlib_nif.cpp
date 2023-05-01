@@ -183,6 +183,22 @@ static ERL_NIF_TERM hnswlib_add_items(ErlNifEnv *env, int argc, const ERL_NIF_TE
     return erlang::nif::ok(env);
 }
 
+static ERL_NIF_TERM hsnwlib_get_max_elements(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 1) {
+        return erlang::nif::error(env, "expecting 1 argument");
+    }
+
+    NifResHNSWLibIndex * index = nullptr;
+    ERL_NIF_TERM ret, error;
+
+    if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
+        return error;
+    }
+
+    size_t max_elements = index->val->getMaxElements();
+    return erlang::nif::ok(env, erlang::nif::make(env, (uint64_t)max_elements));
+}
+
 static ERL_NIF_TERM hnswlib_get_ids_list(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 1) {
         return erlang::nif::error(env, "expecting 1 argument");
@@ -229,6 +245,7 @@ static ErlNifFunc nif_functions[] = {
     {"new", 7, hnswlib_new, 0},
     {"knn_query", 7, hnswlib_knn_query, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"add_items", 7, hnswlib_add_items, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"get_max_elements", 1, hsnwlib_get_max_elements, 0},
     {"get_ids_list", 1, hnswlib_get_ids_list, 0},
     {"float_size", 0, hnswlib_float_size, 0}
 };

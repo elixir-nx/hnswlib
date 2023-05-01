@@ -563,9 +563,9 @@ class Index {
     // }
 
 
-    // size_t getMaxElements() const {
-    //     return appr_alg->max_elements_;
-    // }
+    size_t getMaxElements() const {
+        return appr_alg->max_elements_;
+    }
 
 
     // size_t getCurrentCount() const {

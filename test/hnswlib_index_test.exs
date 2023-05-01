@@ -344,4 +344,13 @@ defmodule HNSWLib.Index.Test do
     assert {:error, "expect ids to be a 1D array, got `{2, 1}`"} ==
              HNSWLib.Index.add_items(index, items, ids: ids)
   end
+
+  test "HNSWLib.Index.get_max_elements/1" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    assert {:ok, 200} == HNSWLib.Index.get_max_elements(index)
+  end
 end
