@@ -45,5 +45,9 @@ defmodule HNSWLib.Nif do
 
   def get_current_count(_self), do: :erlang.nif_error(:not_loaded)
 
+  def get_num_threads(_self), do: :erlang.nif_error(:not_loaded)
+
+  def set_num_threads(_self, _new_num_threads), do: :erlang.nif_error(:not_loaded)
+
   def float_size, do: :erlang.nif_error(:not_loaded)
 end

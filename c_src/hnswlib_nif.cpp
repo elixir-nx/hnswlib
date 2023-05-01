@@ -347,6 +347,41 @@ static ERL_NIF_TERM hnswlib_get_ids_list(ErlNifEnv *env, int argc, const ERL_NIF
     return erlang::nif::ok(env, ret);
 }
 
+static ERL_NIF_TERM hsnwlib_get_num_threads(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 1) {
+        return erlang::nif::error(env, "expecting 1 argument");
+    }
+
+    NifResHNSWLibIndex * index = nullptr;
+    ERL_NIF_TERM ret, error;
+
+    if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
+        return error;
+    }
+
+    return erlang::nif::ok(env, erlang::nif::make(env, (int64_t)index->val->num_threads_default));
+}
+
+static ERL_NIF_TERM hsnwlib_set_num_threads(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 2) {
+        return erlang::nif::error(env, "expecting 2 arguments");
+    }
+
+    NifResHNSWLibIndex * index = nullptr;
+    int new_num_threads;
+    ERL_NIF_TERM ret, error;
+
+    if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
+        return error;
+    }
+    if (!erlang::nif::get(env, argv[1], &new_num_threads)) {
+        return erlang::nif::error(env, (std::string{"expect parameter `num_threads` to be an integer between " + std::to_string(INT_MIN) + " and " + std::to_string(INT_MAX) +  "."}).c_str());
+    }
+    index->val->num_threads_default = new_num_threads;
+
+    return erlang::nif::ok(env);
+}
+
 static ERL_NIF_TERM hnswlib_float_size(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     return enif_make_uint(env, sizeof(float));
 }
@@ -381,6 +416,8 @@ static ErlNifFunc nif_functions[] = {
     {"resize_index", 2, hsnwlib_resize_index, 0},
     {"get_max_elements", 1, hsnwlib_get_max_elements, 0},
     {"get_current_count", 1, hsnwlib_get_current_count, 0},
+    {"get_num_threads", 1, hsnwlib_get_num_threads, 0},
+    {"set_num_threads", 2, hsnwlib_set_num_threads, 0},
     {"float_size", 0, hnswlib_float_size, 0}
 };
 

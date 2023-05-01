@@ -194,6 +194,16 @@ defmodule HNSWLib.Index do
     GenServer.call(self.pid, :get_current_count)
   end
 
+  @spec get_num_threads(%T{}) :: {:ok, integer()} | {:error, String.t()}
+  def get_num_threads(self = %T{}) do
+    GenServer.call(self.pid, :get_num_threads)
+  end
+
+  @spec set_num_threads(%T{}, integer()) :: {:ok, integer()} | {:error, String.t()}
+  def set_num_threads(self = %T{}, new_num_threads) do
+    GenServer.call(self.pid, {:set_num_threads, new_num_threads})
+  end
+
   defp verify_data_tensor(self = %T{}, data = %Nx.Tensor{}) do
     case data.shape do
       {rows, features} ->
@@ -312,6 +322,16 @@ defmodule HNSWLib.Index do
   @impl true
   def handle_call(:get_current_count, _from, self) do
     {:reply, HNSWLib.Nif.get_current_count(self), self}
+  end
+
+  @impl true
+  def handle_call(:get_num_threads, _from, self) do
+    {:reply, HNSWLib.Nif.get_num_threads(self), self}
+  end
+
+  @impl true
+  def handle_call({:set_num_threads, new_num_threads}, _from, self) do
+    {:reply, HNSWLib.Nif.set_num_threads(self, new_num_threads), self}
   end
 
   @impl true

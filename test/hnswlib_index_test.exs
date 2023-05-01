@@ -468,4 +468,28 @@ defmodule HNSWLib.Index.Test do
     assert :ok == HNSWLib.Index.add_items(index, items)
     assert {:ok, 2} == HNSWLib.Index.get_current_count(index)
   end
+
+  test "HNSWLib.Index.get_num_threads/1 with default config" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    {:ok, num_threads} = HNSWLib.Index.get_num_threads(index)
+    assert num_threads == System.schedulers_online()
+  end
+
+  test "HNSWLib.Index.set_num_threads/2" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    {:ok, num_threads} = HNSWLib.Index.get_num_threads(index)
+    assert num_threads == System.schedulers_online()
+
+    :ok = HNSWLib.Index.set_num_threads(index, 2)
+    {:ok, num_threads} = HNSWLib.Index.get_num_threads(index)
+    assert num_threads == 2
+  end
 end

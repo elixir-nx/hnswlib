@@ -150,8 +150,12 @@ ERL_NIF_TERM make(ErlNifEnv *env, long var) {
     return enif_make_int64(env, var);
 }
 
-ERL_NIF_TERM make(ErlNifEnv *env, int var) {
+ERL_NIF_TERM make(ErlNifEnv *env, int32_t var) {
     return enif_make_int(env, var);
+}
+
+ERL_NIF_TERM make(ErlNifEnv *env, int64_t var) {
+    return enif_make_int64(env, var);
 }
 
 ERL_NIF_TERM make(ErlNifEnv *env, uint32_t var) {
