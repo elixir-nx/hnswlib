@@ -277,4 +277,13 @@ defmodule HNSWLib.Index.Test do
             "expect keyword parameter `:filter` to be a function that can be applied with 1 number of arguments , got `:invalid`"} ==
              HNSWLib.Index.knn_query(index, data, filter: filter)
   end
+
+  test "HNSWLib.Index.get_ids_list/1 when empty" do
+    space = :ip
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    assert {:ok, []} == HNSWLib.Index.get_ids_list(index)
+  end
 end

@@ -156,6 +156,11 @@ defmodule HNSWLib.Index do
     end
   end
 
+  @spec get_ids_list(%T{}) :: {:ok, [integer()]} | {:error, String.t()}
+  def get_ids_list(self = %T{}) do
+    GenServer.call(self.pid, :get_ids_list)
+  end
+
   defp float_size do
     HNSWLib.Nif.float_size()
   end
@@ -179,6 +184,11 @@ defmodule HNSWLib.Index do
       {:error, reason} ->
         {:stop, {:error, reason}}
     end
+  end
+
+  @impl true
+  def handle_call(:get_ids_list, _from, self) do
+    {:reply, HNSWLib.Nif.get_ids_list(self), self}
   end
 
   @impl true

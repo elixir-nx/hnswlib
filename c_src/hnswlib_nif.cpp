@@ -126,6 +126,26 @@ static ERL_NIF_TERM hnswlib_knn_query(ErlNifEnv *env, int argc, const ERL_NIF_TE
     return erlang::nif::ok(env);
 }
 
+static ERL_NIF_TERM hnswlib_get_ids_list(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 1) {
+        return erlang::nif::error(env, "expecting 1 argument");
+    }
+
+    NifResHNSWLibIndex * index = nullptr;
+    ERL_NIF_TERM ret, error;
+
+    if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
+        return error;
+    }
+
+    std::vector<hnswlib::labeltype> ids = index->val->getIdsList();
+    if (erlang::nif::make(env, ids, ret)) {
+        return erlang::nif::error(env, "cannot allocate enough memory to hold the list");
+    }
+
+    return erlang::nif::ok(env, ret);
+}
+
 static ERL_NIF_TERM hnswlib_float_size(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     return enif_make_uint(env, sizeof(float));
 }
@@ -151,6 +171,7 @@ static int on_upgrade(ErlNifEnv *, void **, void **, ERL_NIF_TERM) {
 static ErlNifFunc nif_functions[] = {
     {"new", 7, hnswlib_new, 0},
     {"knn_query", 7, hnswlib_knn_query, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"get_ids_list", 1, hnswlib_get_ids_list, 0},
     {"float_size", 0, hnswlib_float_size, 0}
 };
 
