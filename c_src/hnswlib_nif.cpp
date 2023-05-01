@@ -210,6 +210,39 @@ static ERL_NIF_TERM hsnwlib_save_index(ErlNifEnv *env, int argc, const ERL_NIF_T
     return erlang::nif::ok(env);
 }
 
+static ERL_NIF_TERM hsnwlib_load_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 4) {
+        return erlang::nif::error(env, "expecting 4 arguments");
+    }
+
+    NifResHNSWLibIndex * index = nullptr;
+    std::string path;
+    size_t max_elements;
+    bool allow_replace_deleted;
+    ERL_NIF_TERM ret, error;
+
+    if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
+        return error;
+    }
+    if (!erlang::nif::get(env, argv[1], path)) {
+        return erlang::nif::error(env, "expect parameter `path` to be a string");
+    }
+    if (!erlang::nif::get(env, argv[2], &max_elements)) {
+        return erlang::nif::error(env, "expect parameter `max_elements` to be a non-negative integer");
+    }
+    if (!erlang::nif::get(env, argv[3], &allow_replace_deleted)) {
+        return erlang::nif::error(env, "expect parameter `allow_replace_deleted` to be a boolean");
+    }
+
+    try {
+        index->val->loadIndex(path, max_elements, allow_replace_deleted);
+    } catch (std::runtime_error &err) {
+        return erlang::nif::error(env, err.what());
+    }
+
+    return erlang::nif::ok(env);
+}
+
 static ERL_NIF_TERM hsnwlib_mark_deleted(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 2) {
         return erlang::nif::error(env, "expecting 2 arguments");
@@ -471,6 +504,7 @@ static ErlNifFunc nif_functions[] = {
     {"get_num_threads", 1, hsnwlib_get_num_threads, 0},
     {"set_num_threads", 2, hsnwlib_set_num_threads, 0},
     {"save_index", 2, hsnwlib_save_index, ERL_NIF_DIRTY_JOB_IO_BOUND},
+    {"load_index", 4, hsnwlib_load_index, ERL_NIF_DIRTY_JOB_IO_BOUND},
     {"mark_deleted", 2, hsnwlib_mark_deleted, 0},
     {"unmark_deleted", 2, hsnwlib_unmark_deleted, 0},
     {"resize_index", 2, hsnwlib_resize_index, 0},

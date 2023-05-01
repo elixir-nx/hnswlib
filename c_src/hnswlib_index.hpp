@@ -80,25 +80,20 @@ class Index {
     }
 
 
-    // void set_num_threads(int num_threads) {
-    //     this->num_threads_default = num_threads;
-    // }
-
-
     void saveIndex(const std::string &path_to_index) {
         appr_alg->saveIndex(path_to_index);
     }
 
 
-    // void loadIndex(const std::string &path_to_index, size_t max_elements, bool allow_replace_deleted) {
-    //   if (appr_alg) {
-    //       std::cerr << "Warning: Calling load_index for an already inited index. Old index is being deallocated." << std::endl;
-    //       delete appr_alg;
-    //   }
-    //   appr_alg = new hnswlib::HierarchicalNSW<dist_t>(l2space, path_to_index, false, max_elements, allow_replace_deleted);
-    //   cur_l = appr_alg->cur_element_count;
-    //   index_inited = true;
-    // }
+    void loadIndex(const std::string &path_to_index, size_t max_elements, bool allow_replace_deleted) {
+      if (appr_alg) {
+          fprintf(stderr, "Warning: Calling load_index for an already inited index. Old index is being deallocated.\r\n");
+          delete appr_alg;
+      }
+      appr_alg = new hnswlib::HierarchicalNSW<dist_t>(l2space, path_to_index, false, max_elements, allow_replace_deleted);
+      cur_l = appr_alg->cur_element_count;
+      index_inited = true;
+    }
 
 
     void normalize_vector(float* data, float* norm_array) {

@@ -162,6 +162,20 @@ defmodule HNSWLib.Index do
     GenServer.call(self.pid, {:save_index, path})
   end
 
+  @spec load_index(%T{}, Path.t(), [
+    {:max_elements, non_neg_integer()},
+    {:allow_replace_deleted, boolean()}
+  ]) :: :ok | {:error, String.t()}
+  def load_index(self = %T{}, path, opts \\ []) when is_binary(path) and is_list(opts) do
+    with {:ok, max_elements} <- Helper.get_keyword(opts, :max_elements, :non_neg_integer, 0),
+         {:ok, allow_replace_deleted} <- Helper.get_keyword(opts, :allow_replace_deleted, :boolean, false) do
+      GenServer.call(self.pid, {:load_index, path, max_elements, allow_replace_deleted})
+    else
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   @spec mark_deleted(%T{}, non_neg_integer()) :: :ok | {:error, String.t()}
   def mark_deleted(self = %T{}, label) when is_integer(label) and label >= 0 do
     GenServer.call(self.pid, {:mark_deleted, label})
@@ -327,6 +341,11 @@ defmodule HNSWLib.Index do
   @impl true
   def handle_call({:save_index, path}, _from, self) do
     {:reply, HNSWLib.Nif.save_index(self, path), self}
+  end
+
+  @impl true
+  def handle_call({:load_index, path, max_elements, allow_replace_deleted}, _from, self) do
+    {:reply, HNSWLib.Nif.load_index(self, path, max_elements, allow_replace_deleted), self}
   end
 
   @impl true
