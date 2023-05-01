@@ -422,6 +422,75 @@ static ERL_NIF_TERM hsnwlib_set_num_threads(ErlNifEnv *env, int argc, const ERL_
     return erlang::nif::ok(env);
 }
 
+static ERL_NIF_TERM hnswlib_get_items(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 3) {
+        return erlang::nif::error(env, "expecting 3 arguments");
+    }
+
+    NifResHNSWLibIndex * index = nullptr;
+    ErlNifBinary ids_binary;
+    std::vector<uint64_t> ids;
+    std::string return_type;
+    ERL_NIF_TERM ret, error;
+
+    if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
+        return error;
+    }
+    if (!enif_inspect_binary(env, argv[1], &ids_binary)) {
+        if (!erlang::nif::check_nil(env, argv[1])) {
+            if (!erlang::nif::get_list(env, argv[1], ids)) {
+                return erlang::nif::error(env, "expect `ids` to be either a binary, `nil`, or a list of non-negative integers.");
+            }
+        }
+    } else {
+        if (ids_binary.size % sizeof(uint64_t) != 0) {
+            return erlang::nif::error(env, (
+                std::string{"expect `ids`'s size to be a multiple of "} + std::to_string(sizeof(uint64_t)) + " (sizeof(uint64_t)), got `" + std::to_string(ids_binary.size) + "` bytes").c_str());
+        } else {
+            size_t count = ids_binary.size / sizeof(uint64_t);
+            ids = std::vector<uint64_t>{ids_binary.data, ids_binary.data + count};
+        }
+    }
+    if (!erlang::nif::get_atom(env, argv[2], return_type)) {
+        return erlang::nif::error(env, "expect `return` to be an atom");
+    }
+    if (!(return_type == "tensor" || return_type == "binary" || return_type == "list")) {
+        return erlang::nif::error(env, "expect `return` to be an atom and is one of `:tensor`, `:binary` or `:list`.");
+    }
+
+    std::vector<std::vector<float>> data;
+    try {
+        data = index->val->getDataReturnList(ids);
+    } catch (std::runtime_error &err) {
+        return erlang::nif::error(env, err.what());
+    }
+
+    std::vector<ERL_NIF_TERM> ret_list;
+    if (return_type == "list") {
+        for (auto& d : data) {
+            ERL_NIF_TERM cur;
+            if (erlang::nif::make(env, d, cur)) {
+                return erlang::nif::error(env, "cannot allocate enough memory to hold the list");
+            }
+            ret_list.push_back(cur);
+        }
+
+        return erlang::nif::ok(env, enif_make_list_from_array(env, ret_list.data(), (unsigned)ret_list.size()));
+    } else {
+        for (auto& d : data) {
+            ErlNifBinary bin;
+            size_t bin_size = d.size() * sizeof(float);
+            if (!enif_alloc_binary(bin_size, &bin)) {
+                return erlang::nif::error(env, "cannot allocate enough memory to hold the list");
+            }
+            memcpy(bin.data, d.data(), bin_size);
+            ret_list.push_back(enif_make_binary(env, &bin));
+        }
+
+        return erlang::nif::ok(env, enif_make_list_from_array(env, ret_list.data(), (unsigned)ret_list.size()));
+    }
+}
+
 static ERL_NIF_TERM hnswlib_get_ids_list(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 1) {
         return erlang::nif::error(env, "expecting 1 argument");
@@ -498,6 +567,7 @@ static ErlNifFunc nif_functions[] = {
     {"new", 7, hnswlib_new, 0},
     {"knn_query", 7, hnswlib_knn_query, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"add_items", 7, hnswlib_add_items, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"get_items", 3, hnswlib_get_items, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"get_ids_list", 1, hnswlib_get_ids_list, 0},
     {"get_ef", 1, hsnwlib_get_ef, 0},
     {"set_ef", 2, hsnwlib_set_ef, 0},

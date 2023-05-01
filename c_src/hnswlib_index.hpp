@@ -159,29 +159,13 @@ class Index {
     }
 
 
-    // std::vector<std::vector<data_t>> getDataReturnList(py::object ids_ = py::none()) {
-    //     std::vector<size_t> ids;
-    //     if (!ids_.is_none()) {
-    //         py::array_t < size_t, py::array::c_style | py::array::forcecast > items(ids_);
-    //         auto ids_numpy = items.request();
-
-    //         if (ids_numpy.ndim == 0) {
-    //             throw std::invalid_argument("get_items accepts a list of indices and returns a list of vectors");
-    //         } else {
-    //             std::vector<size_t> ids1(ids_numpy.shape[0]);
-    //             for (size_t i = 0; i < ids1.size(); i++) {
-    //                 ids1[i] = items.data()[i];
-    //             }
-    //             ids.swap(ids1);
-    //         }
-    //     }
-
-    //     std::vector<std::vector<data_t>> data;
-    //     for (auto id : ids) {
-    //         data.push_back(appr_alg->template getDataByLabel<data_t>(id));
-    //     }
-    //     return data;
-    // }
+    std::vector<std::vector<data_t>> getDataReturnList(const std::vector<uint64_t>& ids) {
+        std::vector<std::vector<data_t>> data;
+        for (auto id : ids) {
+            data.push_back(appr_alg->template getDataByLabel<data_t>((size_t)id));
+        }
+        return data;
+    }
 
 
     std::vector<hnswlib::labeltype> getIdsList() {

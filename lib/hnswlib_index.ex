@@ -163,12 +163,13 @@ defmodule HNSWLib.Index do
   end
 
   @spec load_index(%T{}, Path.t(), [
-    {:max_elements, non_neg_integer()},
-    {:allow_replace_deleted, boolean()}
-  ]) :: :ok | {:error, String.t()}
+          {:max_elements, non_neg_integer()},
+          {:allow_replace_deleted, boolean()}
+        ]) :: :ok | {:error, String.t()}
   def load_index(self = %T{}, path, opts \\ []) when is_binary(path) and is_list(opts) do
     with {:ok, max_elements} <- Helper.get_keyword(opts, :max_elements, :non_neg_integer, 0),
-         {:ok, allow_replace_deleted} <- Helper.get_keyword(opts, :allow_replace_deleted, :boolean, false) do
+         {:ok, allow_replace_deleted} <-
+           Helper.get_keyword(opts, :allow_replace_deleted, :boolean, false) do
       GenServer.call(self.pid, {:load_index, path, max_elements, allow_replace_deleted})
     else
       {:error, reason} ->
@@ -187,7 +188,7 @@ defmodule HNSWLib.Index do
   end
 
   @spec add_items(%T{}, Nx.Tensor.t() | binary() | [binary()], [
-          {:ids, Nx.Tensor.t() | nil},
+          {:ids, Nx.Tensor.t() | [non_neg_integer()] | nil},
           {:num_threads, integer()},
           {:replace_deleted, false}
         ]) :: :ok | {:error, String.t()}
@@ -202,6 +203,20 @@ defmodule HNSWLib.Index do
         self.pid,
         {:add_items, f32_data, ids, num_threads, replace_deleted, rows, features}
       )
+    else
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @spec get_items(%T{}, Nx.Tensor.t() | [integer()], [
+          {:return, :tensor | :list | :binary}
+        ]) :: {:ok, [[number()]] | Nx.Tensor.t() | [binary()]} | {:error, String.t()}
+  def get_items(self = %T{}, ids, opts \\ []) do
+    with {:ok, ids} <- normalize_ids(ids),
+         {:ok, return} <-
+           Helper.get_keyword(opts, :return, {:atom, [:tensor, :list, :binary]}, :tensor) do
+      GenServer.call(self.pid, {:get_items, ids, return})
     else
       {:error, reason} ->
         {:error, reason}
@@ -265,6 +280,16 @@ defmodule HNSWLib.Index do
     end
   end
 
+  defp normalize_ids(ids) when is_list(ids) do
+    if Enum.all?(ids, fn x ->
+         is_integer(x) and x >= 0
+       end) do
+      {:ok, ids}
+    else
+      {:error, "expect `ids` to be a list of non-negative integers"}
+    end
+  end
+
   defp normalize_ids(nil) do
     {:ok, nil}
   end
@@ -311,6 +336,30 @@ defmodule HNSWLib.Index do
     {:reply,
      HNSWLib.Nif.add_items(self, f32_data, ids, num_threads, replace_deleted, rows, features),
      self}
+  end
+
+  @impl true
+  def handle_call({:get_items, ids, return}, _from, self) do
+    with {:ok, data} <- HNSWLib.Nif.get_items(self, ids, return) do
+      return_val =
+        case return do
+          :tensor ->
+            Enum.map(data, fn bin ->
+              Nx.from_binary(bin, :f32)
+            end)
+
+          :binary ->
+            data
+
+          :list ->
+            data
+        end
+
+      {:reply, {:ok, return_val}, self}
+    else
+      {:error, reason} ->
+        {:reply, {:error, reason}, self}
+    end
   end
 
   @impl true

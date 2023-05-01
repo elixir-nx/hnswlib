@@ -63,6 +63,20 @@ defmodule HNSWLib.Helper do
      "expect keyword parameter `#{inspect(key)}` to be a function that can be applied with #{arity} number of arguments , got `#{inspect(val)}`"}
   end
 
+  defp get_keyword(_key, val, :atom) when is_atom(val) do
+    {:ok, val}
+  end
+
+  defp get_keyword(key, val, {:atom, allowed_atoms})
+       when is_atom(val) and is_list(allowed_atoms) do
+    if val in allowed_atoms do
+      {:ok, val}
+    else
+      {:error,
+       "expect keyword parameter `#{inspect(key)}` to be an atom and is one of `#{inspect(allowed_atoms)}`, got `#{inspect(val)}`"}
+    end
+  end
+
   def list_of_binary(data) when is_list(data) do
     count = Enum.count(data)
 

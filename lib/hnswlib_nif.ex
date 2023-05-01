@@ -29,6 +29,8 @@ defmodule HNSWLib.Nif do
   def add_items(_self, _f32_data, _ids, _num_threads, _replace_deleted, _rows, _features),
     do: :erlang.nif_error(:not_loaded)
 
+  def get_items(_self, _ids, _return), do: :erlang.nif_error(:not_loaded)
+
   def get_ids_list(_self), do: :erlang.nif_error(:not_loaded)
 
   def get_ef(_self), do: :erlang.nif_error(:not_loaded)
@@ -41,7 +43,8 @@ defmodule HNSWLib.Nif do
 
   def save_index(_self, _path), do: :erlang.nif_error(:not_loaded)
 
-  def load_index(_self, _path, _max_elements, _allow_replace_deleted), do: :erlang.nif_error(:not_loaded)
+  def load_index(_self, _path, _max_elements, _allow_replace_deleted),
+    do: :erlang.nif_error(:not_loaded)
 
   def mark_deleted(_self, _label), do: :erlang.nif_error(:not_loaded)
 
