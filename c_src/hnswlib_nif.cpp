@@ -382,6 +382,36 @@ static ERL_NIF_TERM hsnwlib_set_num_threads(ErlNifEnv *env, int argc, const ERL_
     return erlang::nif::ok(env);
 }
 
+static ERL_NIF_TERM hsnwlib_get_ef_construction(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 1) {
+        return erlang::nif::error(env, "expecting 1 argument");
+    }
+
+    NifResHNSWLibIndex * index = nullptr;
+    ERL_NIF_TERM ret, error;
+
+    if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
+        return error;
+    }
+
+    return erlang::nif::ok(env, erlang::nif::make(env, (uint64_t)(index->val->index_inited ? index->val->appr_alg->ef_construction_ : 0)));
+}
+
+static ERL_NIF_TERM hsnwlib_get_m(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 1) {
+        return erlang::nif::error(env, "expecting 1 argument");
+    }
+
+    NifResHNSWLibIndex * index = nullptr;
+    ERL_NIF_TERM ret, error;
+
+    if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
+        return error;
+    }
+
+    return erlang::nif::ok(env, erlang::nif::make(env, (uint64_t)(index->val->index_inited ? index->val->appr_alg->M_ : 0)));
+}
+
 static ERL_NIF_TERM hnswlib_float_size(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     return enif_make_uint(env, sizeof(float));
 }
@@ -418,6 +448,8 @@ static ErlNifFunc nif_functions[] = {
     {"get_current_count", 1, hsnwlib_get_current_count, 0},
     {"get_num_threads", 1, hsnwlib_get_num_threads, 0},
     {"set_num_threads", 2, hsnwlib_set_num_threads, 0},
+    {"get_ef_construction", 1, hsnwlib_get_ef_construction, 0},
+    {"get_m", 1, hsnwlib_get_m, 0},
     {"float_size", 0, hnswlib_float_size, 0}
 };
 

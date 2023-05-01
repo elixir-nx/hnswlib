@@ -492,4 +492,42 @@ defmodule HNSWLib.Index.Test do
     {:ok, num_threads} = HNSWLib.Index.get_num_threads(index)
     assert num_threads == 2
   end
+
+  test "HNSWLib.Index.get_ef_construction/1 with default config" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    assert {:ok, 200} == HNSWLib.Index.get_ef_construction(index)
+  end
+
+  test "HNSWLib.Index.get_ef_construction/1 with custom config" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    ef_construction = 300
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements, ef_construction: ef_construction)
+
+    assert {:ok, 300} == HNSWLib.Index.get_ef_construction(index)
+  end
+
+  test "HNSWLib.Index.get_m/1 with default config" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    assert {:ok, 16} == HNSWLib.Index.get_m(index)
+  end
+
+  test "HNSWLib.Index.get_m/1 with custom config" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    m = 32
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements, m: m)
+
+    assert {:ok, 32} == HNSWLib.Index.get_m(index)
+  end
 end
