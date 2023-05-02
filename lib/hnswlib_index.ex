@@ -33,7 +33,14 @@ defmodule HNSWLib.Index do
   ##### Keyword Paramters
 
   - *m*: `non_neg_integer()`.
+
+    `M` is tightly connected with internal dimensionality of the data
+    strongly affects the memory consumption
+
   - *ef_construction*: `non_neg_integer()`.
+
+    controls index search speed/build speed tradeoff
+
   - *random_seed*: `non_neg_integer()`.
   - *allow_replace_deleted*: `boolean()`.
   """
@@ -493,8 +500,15 @@ defmodule HNSWLib.Index do
         self
       ) do
     {:reply,
-     HNSWLib.Nif.index_add_items(self, f32_data, ids, num_threads, replace_deleted, rows, features),
-     self}
+     HNSWLib.Nif.index_add_items(
+       self,
+       f32_data,
+       ids,
+       num_threads,
+       replace_deleted,
+       rows,
+       features
+     ), self}
   end
 
   @impl true
