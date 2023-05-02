@@ -69,36 +69,57 @@ defmodule HNSWLib.Index do
     end
   end
 
+  @doc """
+  Query the index with a single vector or a list of vectors.
+
+  ##### Positional Parameters
+
+  - *query*: `Nx.Tensor.t() | binary() | [binary()]`.
+
+    A vector or a list of vectors to query.
+
+    If *query* is a list of vectors, the vectors must be of the same dimension.
+
+  ##### Keyword Paramters
+
+  - *k*: `pos_integer()`.
+
+    Number of nearest neighbors to return.
+
+  - *num_threads*: `integer()`.
+
+    Number of threads to use.
+  """
   @spec knn_query(%T{}, Nx.Tensor.t() | binary() | [binary()], [
           {:k, pos_integer()},
           {:num_threads, integer()}
           # {:filter, function()}
         ]) :: :ok | {:error, String.t()}
-  def knn_query(self, data, opts \\ [])
+  def knn_query(self, query, opts \\ [])
 
-  def knn_query(self = %T{}, data, opts) when is_binary(data) do
+  def knn_query(self = %T{}, query, opts) when is_binary(query) do
     with {:ok, k} <- Helper.get_keyword(opts, :k, :pos_integer, 1),
          {:ok, num_threads} <- Helper.get_keyword(opts, :num_threads, :integer, -1),
          #  {:ok, filter} <- Helper.get_keyword(opts, :filter, {:function, 1}, nil, true),
-         :ok <- might_be_float_data?(data),
-         features = trunc(byte_size(data) / float_size()),
+         :ok <- might_be_float_data?(query),
+         features = trunc(byte_size(query) / float_size()),
          {:ok, true} <- ensure_vector_dimension(self, features, true) do
-      GenServer.call(self.pid, {:knn_query, data, k, num_threads, nil, 1, features})
+      GenServer.call(self.pid, {:knn_query, query, k, num_threads, nil, 1, features})
     else
       {:error, reason} ->
         {:error, reason}
     end
   end
 
-  def knn_query(self = %T{}, data, opts) when is_list(data) do
+  def knn_query(self = %T{}, query, opts) when is_list(query) do
     with {:ok, k} <- Helper.get_keyword(opts, :k, :pos_integer, 1),
          {:ok, num_threads} <- Helper.get_keyword(opts, :num_threads, :integer, -1),
          {:ok, filter} <- Helper.get_keyword(opts, :filter, {:function, 1}, nil, true),
-         {:ok, {rows, features}} <- Helper.list_of_binary(data),
+         {:ok, {rows, features}} <- Helper.list_of_binary(query),
          {:ok, true} <- ensure_vector_dimension(self, features, true) do
       GenServer.call(
         self.pid,
-        {:knn_query, IO.iodata_to_binary(data), k, num_threads, filter, rows, features}
+        {:knn_query, IO.iodata_to_binary(query), k, num_threads, filter, rows, features}
       )
     else
       {:error, reason} ->
@@ -106,11 +127,11 @@ defmodule HNSWLib.Index do
     end
   end
 
-  def knn_query(self = %T{}, data = %Nx.Tensor{}, opts) do
+  def knn_query(self = %T{}, query = %Nx.Tensor{}, opts) do
     with {:ok, k} <- Helper.get_keyword(opts, :k, :pos_integer, 1),
          {:ok, num_threads} <- Helper.get_keyword(opts, :num_threads, :integer, -1),
          {:ok, filter} <- Helper.get_keyword(opts, :filter, {:function, 1}, nil, true),
-         {:ok, f32_data, rows, features} <- verify_data_tensor(self, data) do
+         {:ok, f32_data, rows, features} <- verify_data_tensor(self, query) do
       GenServer.call(self.pid, {:knn_query, f32_data, k, num_threads, filter, rows, features})
     else
       {:error, reason} ->
@@ -118,36 +139,79 @@ defmodule HNSWLib.Index do
     end
   end
 
+  @doc """
+  Get a list of existing IDs in the index.
+  """
   @spec get_ids_list(%T{}) :: {:ok, [integer()]} | {:error, String.t()}
   def get_ids_list(self = %T{}) do
     GenServer.call(self.pid, :get_ids_list)
   end
 
+  @doc """
+  Get the ef parameter.
+  """
   @spec get_ef(%T{}) :: {:ok, non_neg_integer()} | {:error, String.t()}
   def get_ef(self = %T{}) do
     GenServer.call(self.pid, :get_ef)
   end
 
+  @doc """
+  Set the ef parameter.
+  """
   @spec set_ef(%T{}, non_neg_integer()) :: :ok | {:error, String.t()}
   def set_ef(self = %T{}, new_ef) when is_integer(new_ef) and new_ef >= 0 do
     GenServer.call(self.pid, {:set_ef, new_ef})
   end
 
+  @doc """
+  Get the number of threads to use.
+  """
   @spec get_num_threads(%T{}) :: {:ok, integer()} | {:error, String.t()}
   def get_num_threads(self = %T{}) do
     GenServer.call(self.pid, :get_num_threads)
   end
 
+  @doc """
+  Set the number of threads to use.
+  """
   @spec set_num_threads(%T{}, integer()) :: {:ok, integer()} | {:error, String.t()}
   def set_num_threads(self = %T{}, new_num_threads) do
     GenServer.call(self.pid, {:set_num_threads, new_num_threads})
   end
 
+  @doc """
+  Save current index to disk.
+
+  ##### Positional Parameters
+
+  - *path*: `Path.t()`.
+
+    Path to save the index to.
+  """
   @spec save_index(%T{}, Path.t()) :: {:ok, integer()} | {:error, String.t()}
   def save_index(self = %T{}, path) when is_binary(path) do
     GenServer.call(self.pid, {:save_index, path})
   end
 
+  @doc """
+  Load index from disk.
+
+  ##### Positional Parameters
+
+  - *path*: `Path.t()`.
+
+    Path to load the index from.
+
+  ##### Keyword Parameters
+
+  - *max_elements*: `non_neg_integer()`.
+
+    Maximum number of elements to load from the index.
+    If set to 0, all elements will be loaded.
+    Default: 0.
+
+  - *allow_replace_deleted*: `boolean()`.
+  """
   @spec load_index(%T{}, Path.t(), [
           {:max_elements, non_neg_integer()},
           {:allow_replace_deleted, boolean()}
@@ -163,16 +227,67 @@ defmodule HNSWLib.Index do
     end
   end
 
+  @doc """
+  Mark a label as deleted.
+
+  ##### Positional Parameters
+
+  - *label*: `non_neg_integer()`.
+
+    Label to mark as deleted.
+  """
   @spec mark_deleted(%T{}, non_neg_integer()) :: :ok | {:error, String.t()}
   def mark_deleted(self = %T{}, label) when is_integer(label) and label >= 0 do
     GenServer.call(self.pid, {:mark_deleted, label})
   end
 
+  @doc """
+  Unmark a label as deleted.
+
+  ##### Positional Parameters
+
+  - *label*: `non_neg_integer()`.
+
+    Label to unmark as deleted.
+  """
   @spec unmark_deleted(%T{}, non_neg_integer()) :: :ok | {:error, String.t()}
   def unmark_deleted(self = %T{}, label) when is_integer(label) and label >= 0 do
     GenServer.call(self.pid, {:unmark_deleted, label})
   end
 
+  @doc """
+  Add items to the index.
+
+  ##### Positional Parameters
+
+  - *data*: `Nx.Tensor.t()`.
+
+    Data to add to the index.
+
+  ##### Keyword Parameters
+
+  - *ids*: `Nx.Tensor.t() | [non_neg_integer()] | nil`.
+
+    IDs to assign to the data.
+
+    If `nil`, IDs will be assigned sequentially starting from 0.
+
+    Defaults to `nil`.
+
+  - *num_threads*: `integer()`.
+
+    Number of threads to use.
+
+    If set to `-1`, the number of threads will be automatically determined.
+
+    Defaults to `-1`.
+
+  - *replace_deleted*: `boolean()`.
+
+    Whether to replace deleted items.
+
+    Defaults to `false`.
+  """
   @spec add_items(%T{}, Nx.Tensor.t(), [
           {:ids, Nx.Tensor.t() | [non_neg_integer()] | nil},
           {:num_threads, integer()},
@@ -195,6 +310,23 @@ defmodule HNSWLib.Index do
     end
   end
 
+  @doc """
+  Retrieve items from the index using IDs.
+
+  ##### Positional Parameters
+
+  - *ids*: `Nx.Tensor.t() | [non_neg_integer()]`.
+
+    IDs to retrieve.
+
+  ##### Keyword Parameters
+
+  - *return*: `:tensor | :list | :binary`.
+
+    Whether to return a tensor, a list of `[numbers()]` or a list of binary.
+
+    Defaults to `:tensor`.
+  """
   @spec get_items(%T{}, Nx.Tensor.t() | [integer()], [
           {:return, :tensor | :list | :binary}
         ]) :: {:ok, [[number()]] | Nx.Tensor.t() | [binary()]} | {:error, String.t()}
@@ -209,26 +341,47 @@ defmodule HNSWLib.Index do
     end
   end
 
+  @doc """
+  Resize the index.
+
+  ##### Positional Parameters
+
+  - *new_size*: `non_neg_integer()`.
+
+    New size of the index.
+  """
   @spec resize_index(%T{}, non_neg_integer()) :: :ok | {:error, String.t()}
   def resize_index(self = %T{}, new_size) when is_integer(new_size) and new_size >= 0 do
     GenServer.call(self.pid, {:resize_index, new_size})
   end
 
+  @doc """
+  Get the maximum number of elements the index can hold.
+  """
   @spec get_max_elements(%T{}) :: {:ok, integer()} | {:error, String.t()}
   def get_max_elements(self = %T{}) do
     GenServer.call(self.pid, :get_max_elements)
   end
 
+  @doc """
+  Get the current number of elements in the index.
+  """
   @spec get_current_count(%T{}) :: {:ok, integer()} | {:error, String.t()}
   def get_current_count(self = %T{}) do
     GenServer.call(self.pid, :get_current_count)
   end
 
+  @doc """
+  Get the ef_construction parameter.
+  """
   @spec get_ef_construction(%T{}) :: {:ok, integer()} | {:error, String.t()}
   def get_ef_construction(self = %T{}) do
     GenServer.call(self.pid, :get_ef_construction)
   end
 
+  @doc """
+  Get the M parameter.
+  """
   @spec get_m(%T{}) :: {:ok, integer()} | {:error, String.t()}
   def get_m(self = %T{}) do
     GenServer.call(self.pid, :get_m)
