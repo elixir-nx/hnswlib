@@ -162,7 +162,9 @@ int make(ErlNifEnv *env, const char *string, ERL_NIF_TERM &out);
 int make(ErlNifEnv *env, const std::vector<uint8_t>& array, ERL_NIF_TERM &out);
 int make(ErlNifEnv *env, const std::vector<uint16_t>& array, ERL_NIF_TERM &out);
 int make(ErlNifEnv *env, const std::vector<uint32_t>& array, ERL_NIF_TERM &out);
+#ifndef __WIN32__
 int make(ErlNifEnv *env, const std::vector<unsigned long long>& array, ERL_NIF_TERM &out);
+#endif
 int make(ErlNifEnv *env, const std::vector<int8_t>& array, ERL_NIF_TERM &out);
 int make(ErlNifEnv *env, const std::vector<int16_t>& array, ERL_NIF_TERM &out);
 int make(ErlNifEnv *env, const std::vector<int32_t>& array, ERL_NIF_TERM &out);
