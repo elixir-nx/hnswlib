@@ -79,22 +79,11 @@ defmodule HNSWLib.Index do
   def knn_query(self = %T{}, data, opts) when is_binary(data) do
     with {:ok, k} <- Helper.get_keyword(opts, :k, :pos_integer, 1),
          {:ok, num_threads} <- Helper.get_keyword(opts, :num_threads, :integer, -1),
-         {:ok, filter} <- Helper.get_keyword(opts, :filter, {:function, 1}, nil, true) do
-      if rem(byte_size(data), float_size()) != 0 do
-        {:error,
-         "vector feature size should be a multiple of #{HNSWLib.Nif.float_size()} (sizeof(float))"}
-      else
-        features = trunc(byte_size(data) / float_size())
-
-        if features != self.dim do
-          {:error, "Wrong dimensionality of the vectors, expect `#{self.dim}`, got `#{features}`"}
-        else
-          GenServer.call(
-            self.pid,
-            {:knn_query, data, k, num_threads, filter, 1, features}
-          )
-        end
-      end
+         {:ok, filter} <- Helper.get_keyword(opts, :filter, {:function, 1}, nil, true),
+         :ok <- might_be_float_data?(data),
+         features = trunc(byte_size(data) / float_size()),
+         {:ok, true} <- ensure_vector_dimension(self, features, true) do
+      GenServer.call(self.pid, {:knn_query, data, k, num_threads, filter, 1, features})
     else
       {:error, reason} ->
         {:error, reason}
@@ -105,15 +94,12 @@ defmodule HNSWLib.Index do
     with {:ok, k} <- Helper.get_keyword(opts, :k, :pos_integer, 1),
          {:ok, num_threads} <- Helper.get_keyword(opts, :num_threads, :integer, -1),
          {:ok, filter} <- Helper.get_keyword(opts, :filter, {:function, 1}, nil, true),
-         {:ok, {rows, features}} <- Helper.list_of_binary(data) do
-      if features != self.dim do
-        {:error, "Wrong dimensionality of the vectors, expect `#{self.dim}`, got `#{features}`"}
-      else
-        GenServer.call(
-          self.pid,
-          {:knn_query, IO.iodata_to_binary(data), k, num_threads, filter, rows, features}
-        )
-      end
+         {:ok, {rows, features}} <- Helper.list_of_binary(data),
+         {:ok, true} <- ensure_vector_dimension(self, features, true) do
+      GenServer.call(
+        self.pid,
+        {:knn_query, IO.iodata_to_binary(data), k, num_threads, filter, rows, features}
+      )
     else
       {:error, reason} ->
         {:error, reason}
@@ -249,24 +235,39 @@ defmodule HNSWLib.Index do
   end
 
   defp verify_data_tensor(self = %T{}, data = %Nx.Tensor{}) do
-    case data.shape do
-      {rows, features} ->
-        if features != self.dim do
-          {:error, "Wrong dimensionality of the vectors, expect `#{self.dim}`, got `#{features}`"}
-        else
-          {:ok, Nx.to_binary(Nx.as_type(data, :f32)), rows, features}
-        end
+    row_features =
+      case data.shape do
+        {rows, features} ->
+          ensure_vector_dimension(self, features, {rows, features})
 
-      {features} ->
-        if features != self.dim do
-          {:error, "Wrong dimensionality of the vectors, expect `#{self.dim}`, got `#{features}`"}
-        else
-          {:ok, Nx.to_binary(Nx.as_type(data, :f32)), 1, features}
-        end
+        {features} ->
+          ensure_vector_dimension(self, features, {1, features})
 
-      shape ->
-        {:error,
-         "Input vector data wrong shape. Number of dimensions #{tuple_size(shape)}. Data must be a 1D or 2D array."}
+        shape ->
+          {:error,
+           "Input vector data wrong shape. Number of dimensions #{tuple_size(shape)}. Data must be a 1D or 2D array."}
+      end
+
+    with {:ok, {rows, features}} <- row_features do
+      {:ok, Nx.to_binary(Nx.as_type(data, :f32)), rows, features}
+    else
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp ensure_vector_dimension(%T{dim: dim}, dim, ret), do: {:ok, ret}
+
+  defp ensure_vector_dimension(self = %T{}, features, _ret) do
+    {:error, "Wrong dimensionality of the vectors, expect `#{self.dim}`, got `#{features}`"}
+  end
+
+  defp might_be_float_data?(data) do
+    if rem(byte_size(data), float_size()) != 0 do
+      {:error,
+       "vector feature size should be a multiple of #{HNSWLib.Nif.float_size()} (sizeof(float))"}
+    else
+      :ok
     end
   end
 
