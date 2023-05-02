@@ -52,7 +52,7 @@ jobs:
           mix test
 
   macos:
-    runs-on: macos-11-xl
+    runs-on: macos-11
     env:
       MIX_ENV: test
 

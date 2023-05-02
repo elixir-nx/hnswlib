@@ -45,7 +45,7 @@ jobs:
             cache/*.tar.gz
 
   macos:
-    runs-on: macos-11-xl
+    runs-on: macos-11
     env:
       MIX_ENV: prod
 
