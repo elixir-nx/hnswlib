@@ -153,7 +153,7 @@ ERL_NIF_TERM make(ErlNifEnv *env, int32_t var) {
     return enif_make_int(env, var);
 }
 
-ERL_NIF_TERM make(ErlNifEnv *env, int64_t var) {
+ERL_NIF_TERM make(ErlNifEnv *env, long long var) {
     return enif_make_int64(env, var);
 }
 
@@ -161,7 +161,7 @@ ERL_NIF_TERM make(ErlNifEnv *env, uint32_t var) {
     return enif_make_uint(env, var);
 }
 
-ERL_NIF_TERM make(ErlNifEnv *env, uint64_t var) {
+ERL_NIF_TERM make(ErlNifEnv *env, unsigned long long var) {
     return enif_make_uint64(env, var);
 }
 
@@ -234,7 +234,7 @@ int make(ErlNifEnv *env, const std::vector<uint32_t>& array, ERL_NIF_TERM &out) 
     return make_u32_list_from_c_array(env, count, data, out);
 }
 
-int make(ErlNifEnv *env, const std::vector<uint64_t>& array, ERL_NIF_TERM &out) {
+int make(ErlNifEnv *env, const std::vector<unsigned long long>& array, ERL_NIF_TERM &out) {
     size_t count = array.size();
     uint64_t * data = (uint64_t *)array.data();
     return make_u64_list_from_c_array(env, count, data, out);
@@ -258,7 +258,7 @@ int make(ErlNifEnv *env, const std::vector<int32_t>& array, ERL_NIF_TERM &out) {
     return make_i32_list_from_c_array(env, count, data, out);
 }
 
-int make(ErlNifEnv *env, const std::vector<int64_t>& array, ERL_NIF_TERM &out) {
+int make(ErlNifEnv *env, const std::vector<long long>& array, ERL_NIF_TERM &out) {
     size_t count = array.size();
     int64_t * data = (int64_t *)array.data();
     return make_i64_list_from_c_array(env, count, data, out);
