@@ -6,7 +6,6 @@ PRIV_DIR = $(MIX_APP_PATH)/priv
 NIF_SO = $(PRIV_DIR)/hnswlib_nif.so
 HNSWLIB_SRC = $(shell pwd)/3rd_party/hnswlib
 C_SRC = $(shell pwd)/c_src
-LIB_SRC = $(shell pwd)/lib
 ifdef CMAKE_TOOLCHAIN_FILE
 	CMAKE_CONFIGURE_FLAGS=-D CMAKE_TOOLCHAIN_FILE="$(CMAKE_TOOLCHAIN_FILE)"
 endif
@@ -28,8 +27,8 @@ $(NIF_SO):
 		mkdir -p "$(CMAKE_HNSWLIB_BUILD_DIR)" && \
 		cd "$(CMAKE_HNSWLIB_BUILD_DIR)" && \
 			{ cmake --no-warn-unused-cli \
+			-D CMAKE_BUILD_TYPE="$(CMAKE_BUILD_TYPE)" \
 			-D C_SRC="$(C_SRC)" \
-			-D CMAKE_TOOLCHAIN_FILE="$(TOOLCHAIN_FILE)" \
 			-D HNSWLIB_SRC="$(HNSWLIB_SRC)" \
 			-D MIX_APP_PATH="$(MIX_APP_PATH)" \
 			-D PRIV_DIR="$(PRIV_DIR)" \
