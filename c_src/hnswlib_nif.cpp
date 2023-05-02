@@ -83,7 +83,7 @@ static ERL_NIF_TERM hnswlib_index_knn_query(ErlNifEnv *env, int argc, const ERL_
     NifResHNSWLibIndex * index = nullptr;
     ErlNifBinary data;
     size_t k;
-    ssize_t num_threads;
+    long long num_threads;
     ERL_NIF_TERM filter;
     size_t rows, features;
     ERL_NIF_TERM ret, error;
@@ -128,7 +128,7 @@ static ERL_NIF_TERM hnswlib_index_add_items(ErlNifEnv *env, int argc, const ERL_
     ErlNifBinary f32_data;
     ErlNifBinary ids_binary;
     std::vector<uint64_t> ids;
-    ssize_t num_threads;
+    long long num_threads;
     bool replace_deleted;
     size_t rows, features;
     ERL_NIF_TERM ret, error;
