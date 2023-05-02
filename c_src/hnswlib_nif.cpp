@@ -1,5 +1,4 @@
 #include <erl_nif.h>
-#include <ei.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include "nif_utils.hpp"
@@ -16,7 +15,7 @@
 
 ErlNifResourceType * NifResHNSWLibIndex::type = nullptr;
 
-static ERL_NIF_TERM hnswlib_new(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+static ERL_NIF_TERM hnswlib_index_new(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 7) {
         return erlang::nif::error(env, "expecting 7 arguments");
     }
@@ -74,7 +73,7 @@ static ERL_NIF_TERM hnswlib_new(ErlNifEnv *env, int argc, const ERL_NIF_TERM arg
     return erlang::nif::ok(env, ret);
 }
 
-static ERL_NIF_TERM hnswlib_knn_query(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+static ERL_NIF_TERM hnswlib_index_knn_query(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 7) {
         return erlang::nif::error(env, "expecting 7 arguments");
     }
@@ -118,7 +117,7 @@ static ERL_NIF_TERM hnswlib_knn_query(ErlNifEnv *env, int argc, const ERL_NIF_TE
     return ret;
 }
 
-static ERL_NIF_TERM hnswlib_add_items(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+static ERL_NIF_TERM hnswlib_index_add_items(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 7) {
         return erlang::nif::error(env, "expecting 7 arguments");
     }
@@ -180,7 +179,7 @@ static ERL_NIF_TERM hnswlib_add_items(ErlNifEnv *env, int argc, const ERL_NIF_TE
     return erlang::nif::ok(env);
 }
 
-static ERL_NIF_TERM hsnwlib_save_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+static ERL_NIF_TERM hsnwlib_index_save_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 2) {
         return erlang::nif::error(env, "expecting 2 arguments");
     }
@@ -207,7 +206,7 @@ static ERL_NIF_TERM hsnwlib_save_index(ErlNifEnv *env, int argc, const ERL_NIF_T
     return erlang::nif::ok(env);
 }
 
-static ERL_NIF_TERM hsnwlib_load_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+static ERL_NIF_TERM hsnwlib_index_load_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 4) {
         return erlang::nif::error(env, "expecting 4 arguments");
     }
@@ -240,7 +239,7 @@ static ERL_NIF_TERM hsnwlib_load_index(ErlNifEnv *env, int argc, const ERL_NIF_T
     return erlang::nif::ok(env);
 }
 
-static ERL_NIF_TERM hsnwlib_mark_deleted(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+static ERL_NIF_TERM hsnwlib_index_mark_deleted(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 2) {
         return erlang::nif::error(env, "expecting 2 arguments");
     }
@@ -265,7 +264,7 @@ static ERL_NIF_TERM hsnwlib_mark_deleted(ErlNifEnv *env, int argc, const ERL_NIF
     return erlang::nif::ok(env);
 }
 
-static ERL_NIF_TERM hsnwlib_unmark_deleted(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+static ERL_NIF_TERM hsnwlib_index_unmark_deleted(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 2) {
         return erlang::nif::error(env, "expecting 2 arguments");
     }
@@ -290,7 +289,7 @@ static ERL_NIF_TERM hsnwlib_unmark_deleted(ErlNifEnv *env, int argc, const ERL_N
     return erlang::nif::ok(env);
 }
 
-static ERL_NIF_TERM hsnwlib_resize_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+static ERL_NIF_TERM hsnwlib_index_resize_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 2) {
         return erlang::nif::error(env, "expecting 2 arguments");
     }
@@ -317,7 +316,7 @@ static ERL_NIF_TERM hsnwlib_resize_index(ErlNifEnv *env, int argc, const ERL_NIF
     return erlang::nif::ok(env);
 }
 
-static ERL_NIF_TERM hsnwlib_get_max_elements(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+static ERL_NIF_TERM hsnwlib_index_get_max_elements(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 1) {
         return erlang::nif::error(env, "expecting 1 argument");
     }
@@ -333,7 +332,7 @@ static ERL_NIF_TERM hsnwlib_get_max_elements(ErlNifEnv *env, int argc, const ERL
     return erlang::nif::ok(env, erlang::nif::make(env, (uint64_t)max_elements));
 }
 
-static ERL_NIF_TERM hsnwlib_get_current_count(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+static ERL_NIF_TERM hsnwlib_index_get_current_count(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 1) {
         return erlang::nif::error(env, "expecting 1 argument");
     }
@@ -349,7 +348,7 @@ static ERL_NIF_TERM hsnwlib_get_current_count(ErlNifEnv *env, int argc, const ER
     return erlang::nif::ok(env, erlang::nif::make(env, (uint64_t)count));
 }
 
-static ERL_NIF_TERM hsnwlib_get_ef(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+static ERL_NIF_TERM hsnwlib_index_get_ef(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 1) {
         return erlang::nif::error(env, "expecting 1 argument");
     }
@@ -364,7 +363,7 @@ static ERL_NIF_TERM hsnwlib_get_ef(ErlNifEnv *env, int argc, const ERL_NIF_TERM 
     return erlang::nif::ok(env, erlang::nif::make(env, (uint64_t)(index->val->index_inited ? index->val->appr_alg->ef_ : index->val->default_ef)));
 }
 
-static ERL_NIF_TERM hsnwlib_set_ef(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+static ERL_NIF_TERM hsnwlib_index_set_ef(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 2) {
         return erlang::nif::error(env, "expecting 2 arguments");
     }
@@ -384,7 +383,7 @@ static ERL_NIF_TERM hsnwlib_set_ef(ErlNifEnv *env, int argc, const ERL_NIF_TERM 
     return erlang::nif::ok(env);
 }
 
-static ERL_NIF_TERM hsnwlib_get_num_threads(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+static ERL_NIF_TERM hsnwlib_index_get_num_threads(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 1) {
         return erlang::nif::error(env, "expecting 1 argument");
     }
@@ -399,7 +398,7 @@ static ERL_NIF_TERM hsnwlib_get_num_threads(ErlNifEnv *env, int argc, const ERL_
     return erlang::nif::ok(env, erlang::nif::make(env, (int64_t)index->val->num_threads_default));
 }
 
-static ERL_NIF_TERM hsnwlib_set_num_threads(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+static ERL_NIF_TERM hsnwlib_index_set_num_threads(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 2) {
         return erlang::nif::error(env, "expecting 2 arguments");
     }
@@ -419,7 +418,7 @@ static ERL_NIF_TERM hsnwlib_set_num_threads(ErlNifEnv *env, int argc, const ERL_
     return erlang::nif::ok(env);
 }
 
-static ERL_NIF_TERM hnswlib_get_items(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+static ERL_NIF_TERM hnswlib_index_get_items(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 3) {
         return erlang::nif::error(env, "expecting 3 arguments");
     }
@@ -489,7 +488,7 @@ static ERL_NIF_TERM hnswlib_get_items(ErlNifEnv *env, int argc, const ERL_NIF_TE
     }
 }
 
-static ERL_NIF_TERM hnswlib_get_ids_list(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+static ERL_NIF_TERM hnswlib_index_get_ids_list(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 1) {
         return erlang::nif::error(env, "expecting 1 argument");
     }
@@ -509,7 +508,7 @@ static ERL_NIF_TERM hnswlib_get_ids_list(ErlNifEnv *env, int argc, const ERL_NIF
     return erlang::nif::ok(env, ret);
 }
 
-static ERL_NIF_TERM hsnwlib_get_ef_construction(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+static ERL_NIF_TERM hsnwlib_index_get_ef_construction(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 1) {
         return erlang::nif::error(env, "expecting 1 argument");
     }
@@ -524,7 +523,7 @@ static ERL_NIF_TERM hsnwlib_get_ef_construction(ErlNifEnv *env, int argc, const 
     return erlang::nif::ok(env, erlang::nif::make(env, (uint64_t)(index->val->index_inited ? index->val->appr_alg->ef_construction_ : 0)));
 }
 
-static ERL_NIF_TERM hsnwlib_get_m(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+static ERL_NIF_TERM hsnwlib_index_get_m(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 1) {
         return erlang::nif::error(env, "expecting 1 argument");
     }
@@ -562,24 +561,24 @@ static int on_upgrade(ErlNifEnv *, void **, void **, ERL_NIF_TERM) {
 }
 
 static ErlNifFunc nif_functions[] = {
-    {"new", 7, hnswlib_new, 0},
-    {"knn_query", 7, hnswlib_knn_query, ERL_NIF_DIRTY_JOB_CPU_BOUND},
-    {"add_items", 7, hnswlib_add_items, ERL_NIF_DIRTY_JOB_CPU_BOUND},
-    {"get_items", 3, hnswlib_get_items, ERL_NIF_DIRTY_JOB_CPU_BOUND},
-    {"get_ids_list", 1, hnswlib_get_ids_list, 0},
-    {"get_ef", 1, hsnwlib_get_ef, 0},
-    {"set_ef", 2, hsnwlib_set_ef, 0},
-    {"get_num_threads", 1, hsnwlib_get_num_threads, 0},
-    {"set_num_threads", 2, hsnwlib_set_num_threads, 0},
-    {"save_index", 2, hsnwlib_save_index, ERL_NIF_DIRTY_JOB_IO_BOUND},
-    {"load_index", 4, hsnwlib_load_index, ERL_NIF_DIRTY_JOB_IO_BOUND},
-    {"mark_deleted", 2, hsnwlib_mark_deleted, 0},
-    {"unmark_deleted", 2, hsnwlib_unmark_deleted, 0},
-    {"resize_index", 2, hsnwlib_resize_index, 0},
-    {"get_max_elements", 1, hsnwlib_get_max_elements, 0},
-    {"get_current_count", 1, hsnwlib_get_current_count, 0},
-    {"get_ef_construction", 1, hsnwlib_get_ef_construction, 0},
-    {"get_m", 1, hsnwlib_get_m, 0},
+    {"index_new", 7, hnswlib_index_new, 0},
+    {"index_knn_query", 7, hnswlib_index_knn_query, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"index_add_items", 7, hnswlib_index_add_items, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"index_get_items", 3, hnswlib_index_get_items, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"index_get_ids_list", 1, hnswlib_index_get_ids_list, 0},
+    {"index_get_ef", 1, hsnwlib_index_get_ef, 0},
+    {"index_set_ef", 2, hsnwlib_index_set_ef, 0},
+    {"index_get_num_threads", 1, hsnwlib_index_get_num_threads, 0},
+    {"index_set_num_threads", 2, hsnwlib_index_set_num_threads, 0},
+    {"index_save_index", 2, hsnwlib_index_save_index, ERL_NIF_DIRTY_JOB_IO_BOUND},
+    {"index_load_index", 4, hsnwlib_index_load_index, ERL_NIF_DIRTY_JOB_IO_BOUND},
+    {"index_mark_deleted", 2, hsnwlib_index_mark_deleted, 0},
+    {"index_unmark_deleted", 2, hsnwlib_index_unmark_deleted, 0},
+    {"index_resize_index", 2, hsnwlib_index_resize_index, 0},
+    {"index_get_max_elements", 1, hsnwlib_index_get_max_elements, 0},
+    {"index_get_current_count", 1, hsnwlib_index_get_current_count, 0},
+    {"index_get_ef_construction", 1, hsnwlib_index_get_ef_construction, 0},
+    {"index_get_m", 1, hsnwlib_index_get_m, 0},
     {"float_size", 0, hnswlib_float_size, 0}
 };
 

@@ -12,7 +12,7 @@ defmodule HNSWLib.Nif do
     end
   end
 
-  def new(
+  def index_new(
         _space,
         _dim,
         _max_elements,
@@ -23,42 +23,42 @@ defmodule HNSWLib.Nif do
       ),
       do: :erlang.nif_error(:not_loaded)
 
-  def knn_query(_self, _data, _k, _num_threads, _filter, _rows, _features),
+  def index_knn_query(_self, _data, _k, _num_threads, _filter, _rows, _features),
     do: :erlang.nif_error(:not_loaded)
 
-  def add_items(_self, _f32_data, _ids, _num_threads, _replace_deleted, _rows, _features),
+  def index_add_items(_self, _f32_data, _ids, _num_threads, _replace_deleted, _rows, _features),
     do: :erlang.nif_error(:not_loaded)
 
-  def get_items(_self, _ids, _return), do: :erlang.nif_error(:not_loaded)
+  def index_get_items(_self, _ids, _return), do: :erlang.nif_error(:not_loaded)
 
-  def get_ids_list(_self), do: :erlang.nif_error(:not_loaded)
+  def index_get_ids_list(_self), do: :erlang.nif_error(:not_loaded)
 
-  def get_ef(_self), do: :erlang.nif_error(:not_loaded)
+  def index_get_ef(_self), do: :erlang.nif_error(:not_loaded)
 
-  def set_ef(_self, _new_ef), do: :erlang.nif_error(:not_loaded)
+  def index_set_ef(_self, _new_ef), do: :erlang.nif_error(:not_loaded)
 
-  def get_num_threads(_self), do: :erlang.nif_error(:not_loaded)
+  def index_get_num_threads(_self), do: :erlang.nif_error(:not_loaded)
 
-  def set_num_threads(_self, _new_num_threads), do: :erlang.nif_error(:not_loaded)
+  def index_set_num_threads(_self, _new_num_threads), do: :erlang.nif_error(:not_loaded)
 
-  def save_index(_self, _path), do: :erlang.nif_error(:not_loaded)
+  def index_save_index(_self, _path), do: :erlang.nif_error(:not_loaded)
 
-  def load_index(_self, _path, _max_elements, _allow_replace_deleted),
+  def index_load_index(_self, _path, _max_elements, _allow_replace_deleted),
     do: :erlang.nif_error(:not_loaded)
 
-  def mark_deleted(_self, _label), do: :erlang.nif_error(:not_loaded)
+  def index_mark_deleted(_self, _label), do: :erlang.nif_error(:not_loaded)
 
-  def unmark_deleted(_self, _label), do: :erlang.nif_error(:not_loaded)
+  def index_unmark_deleted(_self, _label), do: :erlang.nif_error(:not_loaded)
 
-  def resize_index(_self, _new_size), do: :erlang.nif_error(:not_loaded)
+  def index_resize_index(_self, _new_size), do: :erlang.nif_error(:not_loaded)
 
-  def get_max_elements(_self), do: :erlang.nif_error(:not_loaded)
+  def index_get_max_elements(_self), do: :erlang.nif_error(:not_loaded)
 
-  def get_current_count(_self), do: :erlang.nif_error(:not_loaded)
+  def index_get_current_count(_self), do: :erlang.nif_error(:not_loaded)
 
-  def get_ef_construction(_self), do: :erlang.nif_error(:not_loaded)
+  def index_get_ef_construction(_self), do: :erlang.nif_error(:not_loaded)
 
-  def get_m(_self), do: :erlang.nif_error(:not_loaded)
+  def index_get_m(_self), do: :erlang.nif_error(:not_loaded)
 
   def float_size, do: :erlang.nif_error(:not_loaded)
 end

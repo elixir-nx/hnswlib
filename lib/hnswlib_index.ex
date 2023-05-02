@@ -456,7 +456,7 @@ defmodule HNSWLib.Index do
 
   @impl true
   def init({space, dim, max_elements, m, ef_construction, random_seed, allow_replace_deleted}) do
-    case HNSWLib.Nif.new(
+    case HNSWLib.Nif.index_new(
            space,
            dim,
            max_elements,
@@ -475,7 +475,7 @@ defmodule HNSWLib.Index do
 
   @impl true
   def handle_call({:knn_query, data, k, num_threads, filter, rows, features}, _from, self) do
-    case HNSWLib.Nif.knn_query(self, data, k, num_threads, filter, rows, features) do
+    case HNSWLib.Nif.index_knn_query(self, data, k, num_threads, filter, rows, features) do
       {:ok, labels, dists, rows, k, label_bits, dist_bits} ->
         labels = Nx.reshape(Nx.from_binary(labels, :"u#{label_bits}"), {rows, k})
         dists = Nx.reshape(Nx.from_binary(dists, :"f#{dist_bits}"), {rows, k})
@@ -493,13 +493,13 @@ defmodule HNSWLib.Index do
         self
       ) do
     {:reply,
-     HNSWLib.Nif.add_items(self, f32_data, ids, num_threads, replace_deleted, rows, features),
+     HNSWLib.Nif.index_add_items(self, f32_data, ids, num_threads, replace_deleted, rows, features),
      self}
   end
 
   @impl true
   def handle_call({:get_items, ids, return}, _from, self) do
-    with {:ok, data} <- HNSWLib.Nif.get_items(self, ids, return) do
+    with {:ok, data} <- HNSWLib.Nif.index_get_items(self, ids, return) do
       return_val =
         case return do
           :tensor ->
@@ -523,71 +523,71 @@ defmodule HNSWLib.Index do
 
   @impl true
   def handle_call(:get_ids_list, _from, self) do
-    {:reply, HNSWLib.Nif.get_ids_list(self), self}
+    {:reply, HNSWLib.Nif.index_get_ids_list(self), self}
   end
 
   @impl true
   def handle_call(:get_ef, _from, self) do
-    {:reply, HNSWLib.Nif.get_ef(self), self}
+    {:reply, HNSWLib.Nif.index_get_ef(self), self}
   end
 
   @impl true
   def handle_call({:set_ef, new_ef}, _from, self) do
-    {:reply, HNSWLib.Nif.set_ef(self, new_ef), self}
+    {:reply, HNSWLib.Nif.index_set_ef(self, new_ef), self}
   end
 
   @impl true
   def handle_call(:get_num_threads, _from, self) do
-    {:reply, HNSWLib.Nif.get_num_threads(self), self}
+    {:reply, HNSWLib.Nif.index_get_num_threads(self), self}
   end
 
   @impl true
   def handle_call({:set_num_threads, new_num_threads}, _from, self) do
-    {:reply, HNSWLib.Nif.set_num_threads(self, new_num_threads), self}
+    {:reply, HNSWLib.Nif.index_set_num_threads(self, new_num_threads), self}
   end
 
   @impl true
   def handle_call({:save_index, path}, _from, self) do
-    {:reply, HNSWLib.Nif.save_index(self, path), self}
+    {:reply, HNSWLib.Nif.index_save_index(self, path), self}
   end
 
   @impl true
   def handle_call({:load_index, path, max_elements, allow_replace_deleted}, _from, self) do
-    {:reply, HNSWLib.Nif.load_index(self, path, max_elements, allow_replace_deleted), self}
+    {:reply, HNSWLib.Nif.index_load_index(self, path, max_elements, allow_replace_deleted), self}
   end
 
   @impl true
   def handle_call({:mark_deleted, label}, _from, self) do
-    {:reply, HNSWLib.Nif.mark_deleted(self, label), self}
+    {:reply, HNSWLib.Nif.index_mark_deleted(self, label), self}
   end
 
   @impl true
   def handle_call({:unmark_deleted, label}, _from, self) do
-    {:reply, HNSWLib.Nif.unmark_deleted(self, label), self}
+    {:reply, HNSWLib.Nif.index_unmark_deleted(self, label), self}
   end
 
   @impl true
   def handle_call({:resize_index, new_size}, _from, self) do
-    {:reply, HNSWLib.Nif.resize_index(self, new_size), self}
+    {:reply, HNSWLib.Nif.index_resize_index(self, new_size), self}
   end
 
   @impl true
   def handle_call(:get_max_elements, _from, self) do
-    {:reply, HNSWLib.Nif.get_max_elements(self), self}
+    {:reply, HNSWLib.Nif.index_get_max_elements(self), self}
   end
 
   @impl true
   def handle_call(:get_current_count, _from, self) do
-    {:reply, HNSWLib.Nif.get_current_count(self), self}
+    {:reply, HNSWLib.Nif.index_get_current_count(self), self}
   end
 
   @impl true
   def handle_call(:get_ef_construction, _from, self) do
-    {:reply, HNSWLib.Nif.get_ef_construction(self), self}
+    {:reply, HNSWLib.Nif.index_get_ef_construction(self), self}
   end
 
   @impl true
   def handle_call(:get_m, _from, self) do
-    {:reply, HNSWLib.Nif.get_m(self), self}
+    {:reply, HNSWLib.Nif.index_get_m(self), self}
   end
 end
