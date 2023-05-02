@@ -51,7 +51,7 @@ defmodule HNSWLib.MixProject do
   defp package() do
     [
       name: "hnswlib_elixir",
-      files: ~w(3rd_party/hnswlib c_src lib mix.exs README* LICENSE* Makefile),
+      files: ~w(3rd_party/hnswlib c_src lib mix.exs README* LICENSE* Makefile checksum.exs),
       licenses: ["Apache-2.0"],
       links: %{"GitHub" => @github_url}
     ]
