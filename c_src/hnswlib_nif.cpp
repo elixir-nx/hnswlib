@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <climits>
 #include "nif_utils.hpp"
-#include "hnswlib_helper.hpp"
 #include "hnswlib_index.hpp"
 #include "hnswlib_nif_resource.h"
 
