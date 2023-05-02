@@ -541,7 +541,7 @@ class Index {
             enif_release_binary(&data_d_bin);
         }
 
-        return out;
+        return true;
     }
 
 

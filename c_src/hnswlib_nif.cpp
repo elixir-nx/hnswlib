@@ -581,6 +581,46 @@ static ERL_NIF_TERM hnswlib_bfindex_new(ErlNifEnv *env, int argc, const ERL_NIF_
     return erlang::nif::ok(env, ret);
 }
 
+static ERL_NIF_TERM hnswlib_bfindex_knn_query(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 6) {
+        return erlang::nif::error(env, "expecting 6 arguments");
+    }
+
+    NifResHNSWLibBFIndex * index = nullptr;
+    ErlNifBinary data;
+    size_t k;
+    ERL_NIF_TERM filter;
+    size_t rows, features;
+    ERL_NIF_TERM ret, error;
+
+    if ((index = NifResHNSWLibBFIndex::get_resource(env, argv[0], error)) == nullptr) {
+        return error;
+    }
+    if (!enif_inspect_binary(env, argv[1], &data)) {
+        return erlang::nif::error(env, "expect `data` to be a binary");
+    }
+    if (data.size % sizeof(float) != 0) {
+        return erlang::nif::error(env, (
+            std::string{"expect `data`'s size to be a multiple of "} + std::to_string(sizeof(float)) + " (sizeof(float)), got `" + std::to_string(data.size) + "` bytes").c_str());
+    }
+    if (!erlang::nif::get(env, argv[2], &k) || k == 0) {
+        return erlang::nif::error(env, "expect parameter `k` to be a positive integer");
+    }
+    if (!enif_is_fun(env, argv[3]) && !erlang::nif::check_nil(env, argv[3])) {
+        return erlang::nif::error(env, "expect parameter `filter` to be a function or `nil`");
+    }
+    if (!erlang::nif::get(env, argv[4], &rows)) {
+        return erlang::nif::error(env, "expect parameter `rows` to be a non-negative integer");
+    }
+    if (!erlang::nif::get(env, argv[5], &features)) {
+        return erlang::nif::error(env, "expect parameter `features` to be a non-negative integer");
+    }
+
+    index->val->knnQuery(env, (float *)data.data, rows, features, k, ret);
+
+    return ret;
+}
+
 static ERL_NIF_TERM hnswlib_bfindex_add_items(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 5) {
         return erlang::nif::error(env, "expecting 5 arguments");
@@ -738,6 +778,7 @@ static ErlNifFunc nif_functions[] = {
     {"index_get_m", 1, hsnwlib_index_get_m, 0},
 
     {"bfindex_new", 3, hnswlib_bfindex_new, 0},
+    {"bfindex_knn_query", 6, hnswlib_bfindex_knn_query, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"bfindex_add_items", 5, hnswlib_bfindex_add_items, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"bfindex_save_index", 2, hsnwlib_bfindex_save_index, ERL_NIF_DIRTY_JOB_IO_BOUND},
     {"bfindex_load_index", 3, hsnwlib_bfindex_load_index, ERL_NIF_DIRTY_JOB_IO_BOUND},

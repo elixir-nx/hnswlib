@@ -49,6 +49,68 @@ defmodule HNSWLib.BFIndex do
   end
 
   @doc """
+  Query the index with a single vector or a list of vectors.
+
+  ##### Positional Parameters
+
+  - *query*: `Nx.Tensor.t() | binary() | [binary()]`.
+
+    A vector or a list of vectors to query.
+
+    If *query* is a list of vectors, the vectors must be of the same dimension.
+
+  ##### Keyword Paramters
+
+  - *k*: `pos_integer()`.
+
+    Number of nearest neighbors to return.
+  """
+  @spec knn_query(%T{}, Nx.Tensor.t() | binary() | [binary()], [
+          {:k, pos_integer()}
+          # {:filter, function()}
+        ]) :: :ok | {:error, String.t()}
+  def knn_query(self, query, opts \\ [])
+
+  def knn_query(self = %T{}, query, opts) when is_binary(query) do
+    with {:ok, k} <- Helper.get_keyword(opts, :k, :pos_integer, 1),
+         #  {:ok, filter} <- Helper.get_keyword(opts, :filter, {:function, 1}, nil, true),
+         :ok <- might_be_float_data?(query),
+         features = trunc(byte_size(query) / HNSWLib.Nif.float_size()),
+         {:ok, true} <- ensure_vector_dimension(self, features, true) do
+      GenServer.call(self.pid, {:knn_query, query, k, nil, 1, features})
+    else
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  def knn_query(self = %T{}, query, opts) when is_list(query) do
+    with {:ok, k} <- Helper.get_keyword(opts, :k, :pos_integer, 1),
+         {:ok, filter} <- Helper.get_keyword(opts, :filter, {:function, 1}, nil, true),
+         {:ok, {rows, features}} <- Helper.list_of_binary(query),
+         {:ok, true} <- ensure_vector_dimension(self, features, true) do
+      GenServer.call(
+        self.pid,
+        {:knn_query, IO.iodata_to_binary(query), k, filter, rows, features}
+      )
+    else
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  def knn_query(self = %T{}, query = %Nx.Tensor{}, opts) do
+    with {:ok, k} <- Helper.get_keyword(opts, :k, :pos_integer, 1),
+         {:ok, filter} <- Helper.get_keyword(opts, :filter, {:function, 1}, nil, true),
+         {:ok, f32_data, rows, features} <- verify_data_tensor(self, query) do
+      GenServer.call(self.pid, {:knn_query, f32_data, k, filter, rows, features})
+    else
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
   Add items to the index.
 
   ##### Positional Parameters
@@ -156,6 +218,15 @@ defmodule HNSWLib.BFIndex do
     {:error, "Wrong dimensionality of the vectors, expect `#{self.dim}`, got `#{features}`"}
   end
 
+  defp might_be_float_data?(data) do
+    if rem(byte_size(data), HNSWLib.Nif.float_size()) != 0 do
+      {:error,
+       "vector feature size should be a multiple of #{HNSWLib.Nif.float_size()} (sizeof(float))"}
+    else
+      :ok
+    end
+  end
+
   defp normalize_ids(ids = %Nx.Tensor{}) do
     case ids.shape do
       {_} ->
@@ -190,6 +261,19 @@ defmodule HNSWLib.BFIndex do
 
       {:error, reason} ->
         {:stop, {:error, reason}}
+    end
+  end
+
+  @impl true
+  def handle_call({:knn_query, data, k, filter, rows, features}, _from, self) do
+    case HNSWLib.Nif.bfindex_knn_query(self, data, k, filter, rows, features) do
+      {:ok, labels, dists, rows, k, label_bits, dist_bits} ->
+        labels = Nx.reshape(Nx.from_binary(labels, :"u#{label_bits}"), {rows, k})
+        dists = Nx.reshape(Nx.from_binary(dists, :"f#{dist_bits}"), {rows, k})
+        {:reply, {:ok, labels, dists}, self}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
