@@ -173,7 +173,8 @@ defmodule HNSWLib.Index.Test do
         ],
         type: :f32
       )
-    ids = [5,6,7,8,9]
+
+    ids = [5, 6, 7, 8, 9]
 
     query = <<41.0::float-32-little, 41.0::float-32-little>>
     {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
@@ -200,24 +201,31 @@ defmodule HNSWLib.Index.Test do
         ],
         type: :f32
       )
-    ids = [5,6,7,8,9]
+
+    ids = [5, 6, 7, 8, 9]
 
     query = [
-      <<0.0::float-32-little,  0.0::float-32-little>>,
+      <<0.0::float-32-little, 0.0::float-32-little>>,
       <<41.0::float-32-little, 41.0::float-32-little>>
     ]
+
     {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
     assert :ok == HNSWLib.Index.add_items(index, data, ids: ids)
 
     {:ok, labels, dists} = HNSWLib.Index.knn_query(index, query, k: 3)
     assert 1 == Nx.to_number(Nx.all_close(labels, Nx.tensor([[7, 5, 6], [5, 6, 7]])))
-    assert 1 == Nx.to_number(Nx.all_close(dists, Nx.tensor([[0.0, 3528.0, 3698.0], [2.0, 8.0, 3362.0]])))
+
+    assert 1 ==
+             Nx.to_number(
+               Nx.all_close(dists, Nx.tensor([[0.0, 3528.0, 3698.0], [2.0, 8.0, 3362.0]]))
+             )
   end
 
   test "HNSWLib.Index.knn_query/2 with Nx.Tensor (:f32)" do
     space = :l2
     dim = 2
     max_elements = 200
+
     data =
       Nx.tensor(
         [
@@ -229,6 +237,7 @@ defmodule HNSWLib.Index.Test do
         ],
         type: :f32
       )
+
     query = Nx.tensor([1, 2], type: :f32)
     {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
     assert :ok == HNSWLib.Index.add_items(index, data)
@@ -242,6 +251,7 @@ defmodule HNSWLib.Index.Test do
     space = :l2
     dim = 2
     max_elements = 200
+
     data =
       Nx.tensor(
         [
@@ -253,6 +263,7 @@ defmodule HNSWLib.Index.Test do
         ],
         type: :f32
       )
+
     query = Nx.tensor([1, 2], type: :u8)
     {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
     assert :ok == HNSWLib.Index.add_items(index, data)
