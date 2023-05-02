@@ -72,31 +72,22 @@ class BFIndex {
     }
 
 
-    // void addItems(py::object input, py::object ids_ = py::none()) {
-    //     py::array_t < dist_t, py::array::c_style | py::array::forcecast > items(input);
-    //     auto buffer = items.request();
-    //     size_t rows, features;
-    //     get_input_array_shapes(buffer, &rows, &features);
+    void addItems(float * input, size_t rows, size_t features, const std::vector<uint64_t>& ids) {
+        if (features != dim)
+            throw std::runtime_error("Wrong dimensionality of the vectors");
 
-    //     if (features != dim)
-    //         throw std::runtime_error("Wrong dimensionality of the vectors");
-
-    //     std::vector<size_t> ids = get_input_ids_and_check_shapes(ids_, rows);
-
-    //     {
-    //         for (size_t row = 0; row < rows; row++) {
-    //             size_t id = ids.size() ? ids.at(row) : cur_l + row;
-    //             if (!normalize) {
-    //                 alg->addPoint((void *) items.data(row), (size_t) id);
-    //             } else {
-    //                 std::vector<float> normalized_vector(dim);
-    //                 normalize_vector((float *)items.data(row), normalized_vector.data());
-    //                 alg->addPoint((void *) normalized_vector.data(), (size_t) id);
-    //             }
-    //         }
-    //         cur_l+=rows;
-    //     }
-    // }
+        for (size_t row = 0; row < rows; row++) {
+            uint64_t id = ids.size() ? ids.at(row) : cur_l + row;
+            if (!normalize) {
+                alg->addPoint((void *)(input + row * features), (size_t)id);
+            } else {
+                std::vector<float> normalized_vector(dim);
+                normalize_vector((float *)(input + row * features), normalized_vector.data());
+                alg->addPoint((void *)normalized_vector.data(), (size_t)id);
+            }
+        }
+        cur_l+=rows;
+    }
 
 
     void deleteVector(size_t label) {

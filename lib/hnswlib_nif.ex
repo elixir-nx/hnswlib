@@ -62,5 +62,8 @@ defmodule HNSWLib.Nif do
 
   def bfindex_new(_space, _dim, _max_elements), do: :erlang.nif_error(:not_loaded)
 
+  def bfindex_add_items(_self, _f32_data, _ids, _rows, _features),
+    do: :erlang.nif_error(:not_loaded)
+
   def float_size, do: :erlang.nif_error(:not_loaded)
 end
