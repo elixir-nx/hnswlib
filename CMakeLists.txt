@@ -35,6 +35,9 @@ endif()
 
 message(STATUS "CMAKE_TOOLCHAIN_FILE: ${CMAKE_TOOLCHAIN_FILE}")
 
+if(WIN32)
+    string(REPLACE "\\" "/" C_SRC "${C_SRC}")
+endif()
 set(SOURCE_FILES
     "${C_SRC}/nif_utils.cpp"
     "${C_SRC}/hnswlib_nif.cpp"
