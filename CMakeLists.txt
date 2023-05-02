@@ -23,22 +23,6 @@ else()
 endif()
 message(STATUS "Using ERTS_INCLUDE_DIR: ${ERTS_INCLUDE_DIR}")
 
-if(DEFINED EI_INCLUDE_DIR AND NOT "${EI_INCLUDE_DIR}" STREQUAL "")
-    set(EI_INCLUDE_DIR "${EI_INCLUDE_DIR}")
-else()
-    set(EI_DIR_ONE_LINER "erl -noshell -eval 'io:put_chars(code:lib_dir(erl_interface)), halt().'")
-    if(WIN32)
-        execute_process(COMMAND powershell -command "${EI_DIR_ONE_LINER}" OUTPUT_VARIABLE EI_DIR)
-    else()
-        execute_process(COMMAND bash -c "${EI_DIR_ONE_LINER}" OUTPUT_VARIABLE EI_DIR)
-    endif()
-
-    set(EI_INCLUDE_DIR "${EI_DIR}/include")
-    set(EI_LIB_DIR "${EI_DIR}/lib")
-endif()
-message(STATUS "Using EI_INCLUDE_DIR: ${EI_INCLUDE_DIR}")
-message(STATUS "Using EI_LIB_DIR: ${EI_LIB_DIR}")
-
 if(UNIX AND APPLE)
     set(CMAKE_SHARED_LINKER_FLAGS "-flat_namespace -undefined suppress -undefined dynamic_lookup")
 endif()
@@ -58,10 +42,7 @@ set(SOURCE_FILES
 )
 
 include_directories("${ERTS_INCLUDE_DIR}")
-include_directories("${EI_INCLUDE_DIR}")
 include_directories("${HNSWLIB_SRC}")
-link_directories("${EI_LIB_DIR}")
-link_libraries(ei)
 
 add_library(hnswlib_nif SHARED
     ${SOURCE_FILES}
