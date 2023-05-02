@@ -1,6 +1,7 @@
 #include <erl_nif.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <climits>
 #include "nif_utils.hpp"
 #include "hnswlib_helper.hpp"
 #include "hnswlib_index.hpp"

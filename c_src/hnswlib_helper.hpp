@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <atomic>
+#include <functional>
 
 /*
  * replacement for the openmp '#pragma omp parallel for' directive
