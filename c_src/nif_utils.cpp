@@ -234,7 +234,7 @@ int make(ErlNifEnv *env, const std::vector<uint32_t>& array, ERL_NIF_TERM &out) 
     return make_u32_list_from_c_array(env, count, data, out);
 }
 
-#ifndef __WIN32__
+#ifndef OS_WIN
 int make(ErlNifEnv *env, const std::vector<unsigned long long>& array, ERL_NIF_TERM &out) {
     size_t count = array.size();
     uint64_t * data = (uint64_t *)array.data();
