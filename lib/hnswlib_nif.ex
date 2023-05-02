@@ -68,6 +68,8 @@ defmodule HNSWLib.Nif do
   def bfindex_add_items(_self, _f32_data, _ids, _rows, _features),
     do: :erlang.nif_error(:not_loaded)
 
+  def bfindex_delete_vector(_self, _label), do: :erlang.nif_error(:not_loaded)
+
   def bfindex_save_index(_self, _path), do: :erlang.nif_error(:not_loaded)
 
   def bfindex_load_index(_self, _path, _max_elements), do: :erlang.nif_error(:not_loaded)

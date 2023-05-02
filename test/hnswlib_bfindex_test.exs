@@ -301,6 +301,22 @@ defmodule HNSWLib.BFIndex.Test do
              HNSWLib.BFIndex.add_items(index, items, ids: ids)
   end
 
+  test "HNSWLib.BFIndex.delete_vector/2" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    items = Nx.tensor([[10, 20], [30, 40]], type: :f32)
+    query = Nx.tensor([29, 39], type: :f32)
+    {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)
+
+    assert :ok == HNSWLib.BFIndex.add_items(index, items)
+    assert :ok == HNSWLib.BFIndex.delete_vector(index, 0)
+
+    {:ok, labels, dists} = HNSWLib.BFIndex.knn_query(index, query)
+    assert 1 == Nx.to_number(Nx.all_close(labels, Nx.tensor([1])))
+    assert 1 == Nx.to_number(Nx.all_close(dists, Nx.tensor([2])))
+  end
+
   test "HNSWLib.BFIndex.save_index/2" do
     space = :l2
     dim = 2

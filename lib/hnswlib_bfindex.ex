@@ -146,6 +146,13 @@ defmodule HNSWLib.BFIndex do
   end
 
   @doc """
+  Delete vectors with the given labels from the index.
+  """
+  def delete_vector(self = %T{}, label) when is_integer(label) do
+    GenServer.call(self.pid, {:delete_vector, label})
+  end
+
+  @doc """
   Save current index to disk.
 
   ##### Positional Parameters
@@ -275,6 +282,11 @@ defmodule HNSWLib.BFIndex do
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  @impl true
+  def handle_call({:delete_vector, label}, _from, self) do
+    {:reply, HNSWLib.Nif.bfindex_delete_vector(self, label), self}
   end
 
   @impl true
