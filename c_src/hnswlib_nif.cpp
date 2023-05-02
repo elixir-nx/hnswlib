@@ -635,6 +635,62 @@ static ERL_NIF_TERM hnswlib_bfindex_add_items(ErlNifEnv *env, int argc, const ER
     return erlang::nif::ok(env);
 }
 
+static ERL_NIF_TERM hsnwlib_bfindex_save_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 2) {
+        return erlang::nif::error(env, "expecting 2 arguments");
+    }
+
+    NifResHNSWLibBFIndex * index = nullptr;
+    std::string path;
+    ERL_NIF_TERM ret, error;
+
+    if ((index = NifResHNSWLibBFIndex::get_resource(env, argv[0], error)) == nullptr) {
+        return error;
+    }
+    if (!erlang::nif::get(env, argv[1], path)) {
+        return erlang::nif::error(env, "expect parameter `path` to be a string");
+    }
+
+    try {
+        index->val->saveIndex(path);
+    } catch (std::runtime_error &err) {
+        return erlang::nif::error(env, err.what());
+    } catch (...) {
+        return erlang::nif::error(env, "cannot save index: unknown reason");
+    }
+
+    return erlang::nif::ok(env);
+}
+
+static ERL_NIF_TERM hsnwlib_bfindex_load_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 3) {
+        return erlang::nif::error(env, "expecting 3 arguments");
+    }
+
+    NifResHNSWLibBFIndex * index = nullptr;
+    std::string path;
+    size_t max_elements;
+    ERL_NIF_TERM ret, error;
+
+    if ((index = NifResHNSWLibBFIndex::get_resource(env, argv[0], error)) == nullptr) {
+        return error;
+    }
+    if (!erlang::nif::get(env, argv[1], path)) {
+        return erlang::nif::error(env, "expect parameter `path` to be a string");
+    }
+    if (!erlang::nif::get(env, argv[2], &max_elements)) {
+        return erlang::nif::error(env, "expect parameter `max_elements` to be a non-negative integer");
+    }
+
+    try {
+        index->val->loadIndex(path, max_elements);
+    } catch (std::runtime_error &err) {
+        return erlang::nif::error(env, err.what());
+    }
+
+    return erlang::nif::ok(env);
+}
+
 static ERL_NIF_TERM hnswlib_float_size(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     return enif_make_uint(env, sizeof(float));
 }
@@ -683,6 +739,8 @@ static ErlNifFunc nif_functions[] = {
 
     {"bfindex_new", 3, hnswlib_bfindex_new, 0},
     {"bfindex_add_items", 5, hnswlib_bfindex_add_items, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"bfindex_save_index", 2, hsnwlib_bfindex_save_index, ERL_NIF_DIRTY_JOB_IO_BOUND},
+    {"bfindex_load_index", 3, hsnwlib_bfindex_load_index, ERL_NIF_DIRTY_JOB_IO_BOUND},
 
     {"float_size", 0, hnswlib_float_size, 0}
 };

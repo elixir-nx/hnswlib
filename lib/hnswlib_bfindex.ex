@@ -5,6 +5,7 @@ defmodule HNSWLib.BFIndex do
 
   defstruct [:space, :dim, :pid]
   alias __MODULE__, as: T
+  alias HNSWLib.Helper
 
   use GenServer
 
@@ -82,6 +83,51 @@ defmodule HNSWLib.BFIndex do
     end
   end
 
+  @doc """
+  Save current index to disk.
+
+  ##### Positional Parameters
+
+  - *path*: `Path.t()`.
+
+    Path to save the index to.
+  """
+  @spec save_index(%T{}, Path.t()) :: {:ok, integer()} | {:error, String.t()}
+  def save_index(self = %T{}, path) when is_binary(path) do
+    GenServer.call(self.pid, {:save_index, path})
+  end
+
+  @doc """
+  Load index from disk.
+
+  ##### Positional Parameters
+
+  - *path*: `Path.t()`.
+
+    Path to load the index from.
+
+  ##### Keyword Parameters
+
+  - *max_elements*: `non_neg_integer()`.
+
+    Maximum number of elements to load from the index.
+
+    If set to 0, all elements will be loaded.
+
+    Defaults to 0.
+  """
+  @spec load_index(%T{}, Path.t(), [
+          {:max_elements, non_neg_integer()}
+        ]) :: :ok | {:error, String.t()}
+  def load_index(self = %T{}, path, opts \\ []) when is_binary(path) and is_list(opts) do
+    with {:ok, max_elements} <- Helper.get_keyword(opts, :max_elements, :non_neg_integer, 0) do
+      GenServer.call(self.pid, {:load_index, path, max_elements})
+    else
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   defp verify_data_tensor(self = %T{}, data = %Nx.Tensor{}) do
     row_features =
       case data.shape do
@@ -150,5 +196,15 @@ defmodule HNSWLib.BFIndex do
   @impl true
   def handle_call({:add_items, f32_data, ids, rows, features}, _from, self) do
     {:reply, HNSWLib.Nif.bfindex_add_items(self, f32_data, ids, rows, features), self}
+  end
+
+  @impl true
+  def handle_call({:save_index, path}, _from, self) do
+    {:reply, HNSWLib.Nif.bfindex_save_index(self, path), self}
+  end
+
+  @impl true
+  def handle_call({:load_index, path, max_elements}, _from, self) do
+    {:reply, HNSWLib.Nif.bfindex_load_index(self, path, max_elements), self}
   end
 end
