@@ -7,7 +7,6 @@
 #include <string>
 #include <erl_nif.h>
 #include "hnswlib_index.hpp"
-#include "hnswlib_bfindex.hpp"
 
 struct NifResHNSWLibIndex {
     Index<float> * val;
