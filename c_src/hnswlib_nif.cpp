@@ -113,17 +113,9 @@ static ERL_NIF_TERM hnswlib_knn_query(ErlNifEnv *env, int argc, const ERL_NIF_TE
         return erlang::nif::error(env, "expect parameter `features` to be a non-negative integer");
     }
 
-    ErlNifPid * process = (ErlNifPid *)enif_alloc(sizeof(ErlNifPid));
-    if (process == nullptr) {
-      return erlang::nif::error(env, "cannot allocate memory for ErlNifPid.");
-    }
-    process = enif_self(env, process);
+    index->val->knnQuery(env, (float *)data.data, rows, features, k, num_threads, ret);
 
-    hnswlib::labeltype *data_l;
-    float *data_d;
-
-    enif_free(process);
-    return erlang::nif::ok(env);
+    return ret;
 }
 
 static ERL_NIF_TERM hnswlib_add_items(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {

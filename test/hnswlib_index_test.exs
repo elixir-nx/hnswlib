@@ -158,43 +158,108 @@ defmodule HNSWLib.Index.Test do
   end
 
   test "HNSWLib.Index.knn_query/2 with binary" do
-    space = :ip
+    space = :l2
     dim = 2
     max_elements = 200
-    data = <<42.0::float-32, 42.0::float-32>>
-    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
 
-    assert :ok == HNSWLib.Index.knn_query(index, data)
+    data =
+      Nx.tensor(
+        [
+          [42, 42],
+          [43, 43],
+          [0, 0],
+          [200, 200],
+          [200, 220]
+        ],
+        type: :f32
+      )
+    ids = [5,6,7,8,9]
+
+    query = <<41.0::float-32-little, 41.0::float-32-little>>
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+    assert :ok == HNSWLib.Index.add_items(index, data, ids: ids)
+
+    {:ok, labels, dists} = HNSWLib.Index.knn_query(index, query, k: 3)
+    assert 1 == Nx.to_number(Nx.all_close(labels, Nx.tensor([5, 6, 7])))
+    assert 1 == Nx.to_number(Nx.all_close(dists, Nx.tensor([2.0, 8.0, 3362.0])))
   end
 
   test "HNSWLib.Index.knn_query/2 with [binary]" do
-    space = :ip
+    space = :l2
     dim = 2
     max_elements = 200
-    data = [<<42.0::float-32, 42.0::float-32>>, <<42.0::float-32, 42.0::float-32>>]
-    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
 
-    assert :ok == HNSWLib.Index.knn_query(index, data)
+    data =
+      Nx.tensor(
+        [
+          [42, 42],
+          [43, 43],
+          [0, 0],
+          [200, 200],
+          [200, 220]
+        ],
+        type: :f32
+      )
+    ids = [5,6,7,8,9]
+
+    query = [
+      <<0.0::float-32-little,  0.0::float-32-little>>,
+      <<41.0::float-32-little, 41.0::float-32-little>>
+    ]
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+    assert :ok == HNSWLib.Index.add_items(index, data, ids: ids)
+
+    {:ok, labels, dists} = HNSWLib.Index.knn_query(index, query, k: 3)
+    assert 1 == Nx.to_number(Nx.all_close(labels, Nx.tensor([[7, 5, 6], [5, 6, 7]])))
+    assert 1 == Nx.to_number(Nx.all_close(dists, Nx.tensor([[0.0, 3528.0, 3698.0], [2.0, 8.0, 3362.0]])))
   end
 
   test "HNSWLib.Index.knn_query/2 with Nx.Tensor (:f32)" do
-    space = :ip
+    space = :l2
     dim = 2
     max_elements = 200
-    data = Nx.tensor([1, 2], type: :f32)
+    data =
+      Nx.tensor(
+        [
+          [42, 42],
+          [43, 43],
+          [0, 0],
+          [200, 200],
+          [200, 220]
+        ],
+        type: :f32
+      )
+    query = Nx.tensor([1, 2], type: :f32)
     {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+    assert :ok == HNSWLib.Index.add_items(index, data)
 
-    assert :ok == HNSWLib.Index.knn_query(index, data)
+    {:ok, labels, dists} = HNSWLib.Index.knn_query(index, query)
+    assert 1 == Nx.to_number(Nx.all_close(labels, Nx.tensor([2])))
+    assert 1 == Nx.to_number(Nx.all_close(dists, Nx.tensor([5])))
   end
 
   test "HNSWLib.Index.knn_query/2 with Nx.Tensor (:u8)" do
-    space = :ip
+    space = :l2
     dim = 2
     max_elements = 200
-    data = Nx.tensor([1, 2], type: :u8)
+    data =
+      Nx.tensor(
+        [
+          [42, 42],
+          [43, 43],
+          [0, 0],
+          [200, 200],
+          [200, 220]
+        ],
+        type: :f32
+      )
+    query = Nx.tensor([1, 2], type: :u8)
     {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+    assert :ok == HNSWLib.Index.add_items(index, data)
 
-    assert :ok == HNSWLib.Index.knn_query(index, data)
+    {:ok, labels, dists} = HNSWLib.Index.knn_query(index, query)
+    assert 1 == Nx.to_number(Nx.all_close(labels, Nx.tensor([2])))
+    assert 1 == Nx.to_number(Nx.all_close(dists, Nx.tensor([5])))
   end
 
   test "HNSWLib.Index.knn_query/2 with invalid length of data" do
@@ -269,18 +334,18 @@ defmodule HNSWLib.Index.Test do
              HNSWLib.Index.knn_query(index, data, num_threads: num_threads)
   end
 
-  test "HNSWLib.Index.knn_query/2 with invalid type for `filter`" do
-    space = :ip
-    dim = 2
-    max_elements = 200
-    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
-    data = <<42.0, 42.0>>
-    filter = :invalid
+  # test "HNSWLib.Index.knn_query/2 with invalid type for `filter`" do
+  #   space = :ip
+  #   dim = 2
+  #   max_elements = 200
+  #   {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+  #   data = <<42.0, 42.0>>
+  #   filter = :invalid
 
-    assert {:error,
-            "expect keyword parameter `:filter` to be a function that can be applied with 1 number of arguments , got `:invalid`"} ==
-             HNSWLib.Index.knn_query(index, data, filter: filter)
-  end
+  #   assert {:error,
+  #           "expect keyword parameter `:filter` to be a function that can be applied with 1 number of arguments , got `:invalid`"} ==
+  #            HNSWLib.Index.knn_query(index, data, filter: filter)
+  # end
 
   test "HNSWLib.Index.add_items/3 without specifying ids" do
     space = :l2
@@ -404,14 +469,14 @@ defmodule HNSWLib.Index.Test do
     assert :ok == HNSWLib.Index.add_items(index, items)
 
     {:ok, [tensor_0, tensor_1]} = HNSWLib.Index.get_items(index, [0, 1], return: :tensor)
-    assert Nx.all_close(tensor_0, items[0])
-    assert Nx.all_close(tensor_1, items[1])
+    assert 1 == Nx.to_number(Nx.all_close(tensor_0, items[0]))
+    assert 1 == Nx.to_number(Nx.all_close(tensor_1, items[1]))
 
     {:ok, [tensor_1]} = HNSWLib.Index.get_items(index, [1], return: :tensor)
-    assert Nx.all_close(tensor_1, items[1])
+    assert 1 == Nx.to_number(Nx.all_close(tensor_1, items[1]))
 
     {:ok, [tensor_0]} = HNSWLib.Index.get_items(index, [0], return: :tensor)
-    assert Nx.all_close(tensor_0, items[0])
+    assert 1 == Nx.to_number(Nx.all_close(tensor_0, items[0]))
 
     assert {:error, "Label not found"} == HNSWLib.Index.get_items(index, [2], return: :tensor)
   end

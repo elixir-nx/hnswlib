@@ -1,12 +1,17 @@
 #ifndef HNSWLIB_INDEX_HPP
 #define HNSWLIB_INDEX_HPP
 
+#pragma once
+
 #include <iostream>
 #include <hnswlib.h>
 #include <thread>
 #include <atomic>
 #include <stdlib.h>
 #include <assert.h>
+#include <erl_nif.h>
+#include "hnswlib_helper.hpp"
+#include "nif_utils.hpp"
 
 template<typename dist_t, typename data_t = float>
 class Index {
@@ -434,92 +439,110 @@ class Index {
     // }
 
 
-    // py::object knnQuery_return_numpy(
-    //     py::object input,
-    //     size_t k = 1,
-    //     int num_threads = -1,
-    //     const std::function<bool(hnswlib::labeltype)>& filter = nullptr) {
-    //     py::array_t < dist_t, py::array::c_style | py::array::forcecast > items(input);
-    //     auto buffer = items.request();
-    //     hnswlib::labeltype* data_numpy_l;
-    //     dist_t* data_numpy_d;
-    //     size_t rows, features;
+    // return true if no error, false otherwise (the `{:error, reason}`-tuple will be saved in `out`)
+    bool knnQuery(
+        ErlNifEnv * env,
+        float * input,
+        size_t rows,
+        size_t features,
+        size_t k,
+        int num_threads,
+        // const std::function<bool(hnswlib::labeltype)>& filter,
+        ERL_NIF_TERM& out) {
+        ErlNifBinary data_l_bin;
+        ErlNifBinary data_d_bin;
 
-    //     if (num_threads <= 0)
-    //         num_threads = num_threads_default;
+        hnswlib::labeltype* data_l;
+        dist_t* data_d;
 
-    //     {
-    //         py::gil_scoped_release l;
-    //         get_input_array_shapes(buffer, &rows, &features);
+        if (num_threads <= 0) {
+            num_threads = num_threads_default;
+        }
 
-    //         // avoid using threads when the number of searches is small:
-    //         if (rows <= num_threads * 4) {
-    //             num_threads = 1;
-    //         }
+        // avoid using threads when the number of searches is small:
+        if (rows <= num_threads * 4) {
+            num_threads = 1;
+        }
 
-    //         data_numpy_l = new hnswlib::labeltype[rows * k];
-    //         data_numpy_d = new dist_t[rows * k];
+        if (!enif_alloc_binary(sizeof(hnswlib::labeltype) * rows * k, &data_l_bin)) {
+            out = hnswlib_error(env, "out of memory for storing labels");
+            return false;
+        }
+        data_l = (hnswlib::labeltype *)data_l_bin.data;
 
-    //         // Warning: search with a filter works slow in python in multithreaded mode. For best performance set num_threads=1
-    //         CustomFilterFunctor idFilter(filter);
-    //         CustomFilterFunctor* p_idFilter = filter ? &idFilter : nullptr;
+        if (!enif_alloc_binary(sizeof(dist_t) * rows * k, &data_d_bin)) {
+            enif_release_binary(&data_l_bin);
+            out = hnswlib_error(env, "out of memory for storing distances");
+            return false;
+        }
+        data_d = (dist_t *)data_d_bin.data;
 
-    //         if (normalize == false) {
-    //             ParallelFor(0, rows, num_threads, [&](size_t row, size_t threadId) {
-    //                 std::priority_queue<std::pair<dist_t, hnswlib::labeltype >> result = appr_alg->searchKnn(
-    //                     (void*)items.data(row), k, p_idFilter);
-    //                 if (result.size() != k)
-    //                     throw std::runtime_error(
-    //                         "Cannot return the results in a contigious 2D array. Probably ef or M is too small");
-    //                 for (int i = k - 1; i >= 0; i--) {
-    //                     auto& result_tuple = result.top();
-    //                     data_numpy_d[row * k + i] = result_tuple.first;
-    //                     data_numpy_l[row * k + i] = result_tuple.second;
-    //                     result.pop();
-    //                 }
-    //             });
-    //         } else {
-    //             std::vector<float> norm_array(num_threads * features);
-    //             ParallelFor(0, rows, num_threads, [&](size_t row, size_t threadId) {
-    //                 float* data = (float*)items.data(row);
+        // CustomFilterFunctor idFilter;
+        CustomFilterFunctor* p_idFilter = nullptr;
 
-    //                 size_t start_idx = threadId * dim;
-    //                 normalize_vector((float*)items.data(row), (norm_array.data() + start_idx));
+        try {
+            if (normalize == false) {
+                ParallelFor(0, rows, num_threads, [&](size_t row, size_t threadId) {
+                    std::priority_queue<std::pair<dist_t, hnswlib::labeltype >> result = appr_alg->searchKnn(
+                        (void *)(input + row * features), k, p_idFilter);
+                    if (result.size() != k) {
+                        throw std::runtime_error(
+                            "Cannot return the results in a contigious 2D array. Probably ef or M is too small");
+                    }
 
-    //                 std::priority_queue<std::pair<dist_t, hnswlib::labeltype >> result = appr_alg->searchKnn(
-    //                     (void*)(norm_array.data() + start_idx), k, p_idFilter);
-    //                 if (result.size() != k)
-    //                     throw std::runtime_error(
-    //                         "Cannot return the results in a contigious 2D array. Probably ef or M is too small");
-    //                 for (int i = k - 1; i >= 0; i--) {
-    //                     auto& result_tuple = result.top();
-    //                     data_numpy_d[row * k + i] = result_tuple.first;
-    //                     data_numpy_l[row * k + i] = result_tuple.second;
-    //                     result.pop();
-    //                 }
-    //             });
-    //         }
-    //     }
-    //     // py::capsule free_when_done_l(data_numpy_l, [](void* f) {
-    //     //     delete[] f;
-    //     //     });
-    //     // py::capsule free_when_done_d(data_numpy_d, [](void* f) {
-    //     //     delete[] f;
-    //     //     });
+                    for (int i = k - 1; i >= 0; i--) {
+                        auto& result_tuple = result.top();
+                        data_d[row * k + i] = result_tuple.first;
+                        data_l[row * k + i] = result_tuple.second;
+                        result.pop();
+                    }
+                });
+            } else {
+                std::vector<float> norm_array(num_threads * features);
+                ParallelFor(0, rows, num_threads, [&](size_t row, size_t threadId) {
+                    float* data = input + row * features;
 
-    //     return py::make_tuple(
-    //         py::array_t<hnswlib::labeltype>(
-    //             { rows, k },  // shape
-    //             { k * sizeof(hnswlib::labeltype),
-    //               sizeof(hnswlib::labeltype) },  // C-style contiguous strides for each index
-    //             data_numpy_l,  // the data pointer
-    //             free_when_done_l),
-    //         py::array_t<dist_t>(
-    //             { rows, k },  // shape
-    //             { k * sizeof(dist_t), sizeof(dist_t) },  // C-style contiguous strides for each index
-    //             data_numpy_d,  // the data pointer
-    //             free_when_done_d));
-    // }
+                    size_t start_idx = threadId * dim;
+                    normalize_vector(data, (norm_array.data() + start_idx));
+
+                    std::priority_queue<std::pair<dist_t, hnswlib::labeltype >> result = appr_alg->searchKnn(
+                        (void*)(norm_array.data() + start_idx), k, p_idFilter);
+                    if (result.size() != k) {
+                        throw std::runtime_error(
+                            "Cannot return the results in a contigious 2D array. Probably ef or M is too small");
+                    }
+
+                    for (int i = k - 1; i >= 0; i--) {
+                        auto& result_tuple = result.top();
+                        data_d[row * k + i] = result_tuple.first;
+                        data_l[row * k + i] = result_tuple.second;
+                        result.pop();
+                    }
+                });
+            }
+
+            ERL_NIF_TERM labels_out = enif_make_binary(env, &data_l_bin);
+            ERL_NIF_TERM dists_out = enif_make_binary(env, &data_d_bin);
+
+            ERL_NIF_TERM label_size = enif_make_uint(env, sizeof(hnswlib::labeltype) * 8);
+            ERL_NIF_TERM dist_size = enif_make_uint(env, sizeof(dist_t) * 8);
+            out = enif_make_tuple7(env,
+                hnswlib_atom(env, "ok"),
+                labels_out,
+                dists_out, 
+                enif_make_uint64(env, rows), 
+                enif_make_uint64(env, k),
+                label_size,
+                dist_size);
+        } catch (std::runtime_error &err) {
+            out = hnswlib_error(env, err.what());
+
+            enif_release_binary(&data_l_bin);
+            enif_release_binary(&data_d_bin);
+        }
+
+        return out;
+    }
 
 
     void markDeleted(size_t label) {
@@ -544,6 +567,30 @@ class Index {
 
     size_t getCurrentCount() const {
         return appr_alg->cur_element_count;
+    }
+
+    ERL_NIF_TERM hnswlib_atom(ErlNifEnv *env, const char *msg) {
+        ERL_NIF_TERM a;
+        if (enif_make_existing_atom(env, msg, &a, ERL_NIF_LATIN1)) {
+            return a;
+        } else {
+            return enif_make_atom(env, msg);
+        }
+    }
+
+    // Helper for returning `{:error, msg}` from NIF.
+    ERL_NIF_TERM hnswlib_error(ErlNifEnv *env, const char *msg) {
+        ERL_NIF_TERM error_atom = hnswlib_atom(env, "error");
+        ERL_NIF_TERM reason;
+        unsigned char *ptr;
+        size_t len = strlen(msg);
+        if ((ptr = enif_make_new_binary(env, len, &reason)) != nullptr) {
+            strcpy((char *) ptr, msg);
+            return enif_make_tuple2(env, error_atom, reason);
+        } else {
+            ERL_NIF_TERM msg_term = enif_make_string(env, msg, ERL_NIF_LATIN1);
+            return enif_make_tuple2(env, error_atom, msg_term);
+        }
     }
 };
 

@@ -1,6 +1,8 @@
 #ifndef HNSWLIB_HELPER_HPP
 #define HNSWLIB_HELPER_HPP
 
+#pragma once
+
 #include <iostream>
 #include <hnswlib.h>
 #include <thread>

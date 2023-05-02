@@ -71,19 +71,19 @@ defmodule HNSWLib.Index do
 
   @spec knn_query(%T{}, Nx.Tensor.t() | binary() | [binary()], [
           {:k, pos_integer()},
-          {:num_threads, integer()},
-          {:filter, function()}
+          {:num_threads, integer()}
+          # {:filter, function()}
         ]) :: :ok | {:error, String.t()}
   def knn_query(self, data, opts \\ [])
 
   def knn_query(self = %T{}, data, opts) when is_binary(data) do
     with {:ok, k} <- Helper.get_keyword(opts, :k, :pos_integer, 1),
          {:ok, num_threads} <- Helper.get_keyword(opts, :num_threads, :integer, -1),
-         {:ok, filter} <- Helper.get_keyword(opts, :filter, {:function, 1}, nil, true),
+         #  {:ok, filter} <- Helper.get_keyword(opts, :filter, {:function, 1}, nil, true),
          :ok <- might_be_float_data?(data),
          features = trunc(byte_size(data) / float_size()),
          {:ok, true} <- ensure_vector_dimension(self, features, true) do
-      GenServer.call(self.pid, {:knn_query, data, k, num_threads, filter, 1, features})
+      GenServer.call(self.pid, {:knn_query, data, k, num_threads, nil, 1, features})
     else
       {:error, reason} ->
         {:error, reason}
@@ -173,7 +173,7 @@ defmodule HNSWLib.Index do
     GenServer.call(self.pid, {:unmark_deleted, label})
   end
 
-  @spec add_items(%T{}, Nx.Tensor.t() | binary() | [binary()], [
+  @spec add_items(%T{}, Nx.Tensor.t(), [
           {:ids, Nx.Tensor.t() | [non_neg_integer()] | nil},
           {:num_threads, integer()},
           {:replace_deleted, false}
@@ -323,8 +323,13 @@ defmodule HNSWLib.Index do
   @impl true
   def handle_call({:knn_query, data, k, num_threads, filter, rows, features}, _from, self) do
     case HNSWLib.Nif.knn_query(self, data, k, num_threads, filter, rows, features) do
-      any ->
-        {:reply, any, self}
+      {:ok, labels, dists, rows, k, label_bits, dist_bits} ->
+        labels = Nx.reshape(Nx.from_binary(labels, :"u#{label_bits}"), {rows, k})
+        dists = Nx.reshape(Nx.from_binary(dists, :"f#{dist_bits}"), {rows, k})
+        {:reply, {:ok, labels, dists}, self}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -431,9 +436,5 @@ defmodule HNSWLib.Index do
   @impl true
   def handle_call(:get_m, _from, self) do
     {:reply, HNSWLib.Nif.get_m(self), self}
-  end
-
-  @impl true
-  def handle_info({:knn_query_filter, filter, id}, _self) do
   end
 end
