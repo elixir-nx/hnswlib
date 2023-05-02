@@ -14,6 +14,7 @@
 #endif
 
 ErlNifResourceType * NifResHNSWLibIndex::type = nullptr;
+ErlNifResourceType * NifResHNSWLibBFIndex::type = nullptr;
 
 static ERL_NIF_TERM hnswlib_index_new(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     if (argc != 7) {
@@ -538,6 +539,48 @@ static ERL_NIF_TERM hsnwlib_index_get_m(ErlNifEnv *env, int argc, const ERL_NIF_
     return erlang::nif::ok(env, erlang::nif::make(env, (uint64_t)(index->val->index_inited ? index->val->appr_alg->M_ : 0)));
 }
 
+static ERL_NIF_TERM hnswlib_bfindex_new(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    if (argc != 3) {
+        return erlang::nif::error(env, "expecting 3 arguments");
+    }
+
+    std::string space;
+    size_t dim;
+    size_t max_elements;
+    NifResHNSWLibBFIndex * index = nullptr;
+    ERL_NIF_TERM ret, error;
+
+    if (!erlang::nif::get_atom(env, argv[0], space)) {
+        return erlang::nif::error(env, "expect parameter `space` to be an atom");
+    }
+    if (!erlang::nif::get(env, argv[1], &dim)) {
+        return erlang::nif::error(env, "expect parameter `space` to be a non-negative integer");
+    }
+    if (!erlang::nif::get(env, argv[2], &max_elements)) {
+        return erlang::nif::error(env, "expect parameter `max_elements` to be a non-negative integer");
+    }
+
+    if ((index = NifResHNSWLibBFIndex::allocate_resource(env, error)) == nullptr) {
+        return error;
+    }
+
+    index->val = nullptr;
+    try {
+        index->val = new BFIndex<float>(space, dim);
+        index->val->init_new_index(max_elements);
+    } catch (std::runtime_error &err) {
+        if (index->val) {
+            delete index->val;
+        }
+        enif_release_resource(index);
+        return erlang::nif::error(env, err.what());
+    }
+
+    ret = enif_make_resource(env, index);
+    enif_release_resource(index);
+    return erlang::nif::ok(env, ret);
+}
+
 static ERL_NIF_TERM hnswlib_float_size(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     return enif_make_uint(env, sizeof(float));
 }
@@ -548,6 +591,10 @@ static int on_load(ErlNifEnv *env, void **, ERL_NIF_TERM) {
     rt = enif_open_resource_type(env, "Elixir.HNSWLib.Nif", "NifResHNSWLibIndex", NifResHNSWLibIndex::destruct_resource, ERL_NIF_RT_CREATE, NULL);
     if (!rt) return -1;
     NifResHNSWLibIndex::type = rt;
+
+    rt = enif_open_resource_type(env, "Elixir.HNSWLib.Nif", "NifResHNSWLibBFIndex", NifResHNSWLibBFIndex::destruct_resource, ERL_NIF_RT_CREATE, NULL);
+    if (!rt) return -1;
+    NifResHNSWLibBFIndex::type = rt;
 
     return 0;
 }
@@ -579,6 +626,9 @@ static ErlNifFunc nif_functions[] = {
     {"index_get_current_count", 1, hsnwlib_index_get_current_count, 0},
     {"index_get_ef_construction", 1, hsnwlib_index_get_ef_construction, 0},
     {"index_get_m", 1, hsnwlib_index_get_m, 0},
+
+    {"bfindex_new", 3, hnswlib_bfindex_new, 0},
+
     {"float_size", 0, hnswlib_float_size, 0}
 };
 
