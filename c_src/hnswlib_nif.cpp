@@ -330,7 +330,7 @@ static ERL_NIF_TERM hnswlib_index_get_max_elements(ErlNifEnv *env, int argc, con
     }
 
     size_t max_elements = index->val->getMaxElements();
-    return erlang::nif::ok(env, erlang::nif::make(env, (uint64_t)max_elements));
+    return erlang::nif::ok(env, erlang::nif::make(env, (unsigned long long)max_elements));
 }
 
 static ERL_NIF_TERM hnswlib_index_get_current_count(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
@@ -346,7 +346,7 @@ static ERL_NIF_TERM hnswlib_index_get_current_count(ErlNifEnv *env, int argc, co
     }
 
     size_t count = index->val->getCurrentCount();
-    return erlang::nif::ok(env, erlang::nif::make(env, (uint64_t)count));
+    return erlang::nif::ok(env, erlang::nif::make(env, (unsigned long long)count));
 }
 
 static ERL_NIF_TERM hnswlib_index_get_ef(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
@@ -361,7 +361,7 @@ static ERL_NIF_TERM hnswlib_index_get_ef(ErlNifEnv *env, int argc, const ERL_NIF
         return error;
     }
 
-    return erlang::nif::ok(env, erlang::nif::make(env, (uint64_t)(index->val->index_inited ? index->val->appr_alg->ef_ : index->val->default_ef)));
+    return erlang::nif::ok(env, erlang::nif::make(env, (unsigned long long)(index->val->index_inited ? index->val->appr_alg->ef_ : index->val->default_ef)));
 }
 
 static ERL_NIF_TERM hnswlib_index_set_ef(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
@@ -521,7 +521,7 @@ static ERL_NIF_TERM hnswlib_index_get_ef_construction(ErlNifEnv *env, int argc, 
         return error;
     }
 
-    return erlang::nif::ok(env, erlang::nif::make(env, (uint64_t)(index->val->index_inited ? index->val->appr_alg->ef_construction_ : 0)));
+    return erlang::nif::ok(env, erlang::nif::make(env, (unsigned long long)(index->val->index_inited ? index->val->appr_alg->ef_construction_ : 0)));
 }
 
 static ERL_NIF_TERM hnswlib_index_get_m(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
@@ -536,7 +536,7 @@ static ERL_NIF_TERM hnswlib_index_get_m(ErlNifEnv *env, int argc, const ERL_NIF_
         return error;
     }
 
-    return erlang::nif::ok(env, erlang::nif::make(env, (uint64_t)(index->val->index_inited ? index->val->appr_alg->M_ : 0)));
+    return erlang::nif::ok(env, erlang::nif::make(env, (unsigned long long)(index->val->index_inited ? index->val->appr_alg->M_ : 0)));
 }
 
 static ERL_NIF_TERM hnswlib_bfindex_new(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
