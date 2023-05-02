@@ -3,6 +3,9 @@ project(hnswlib_nif C CXX)
 
 if(NOT DEFINED PRIV_DIR)
     if(DEFINED MIX_APP_PATH AND NOT "${MIX_APP_PATH}" STREQUAL "")
+        if(WIN32)
+            string(REPLACE "\\" "/" MIX_APP_PATH "${MIX_APP_PATH}")
+        endif()
         set(PRIV_DIR "${MIX_APP_PATH}/priv")
     else()
         set(PRIV_DIR "${CMAKE_CURRENT_SOURCE_DIR}/priv")
@@ -55,7 +58,9 @@ install(
 )
 
 set_target_properties(hnswlib_nif PROPERTIES PREFIX "")
-set_target_properties(hnswlib_nif PROPERTIES SUFFIX ".so")
+if(NOT WIN32)
+    set_target_properties(hnswlib_nif PROPERTIES SUFFIX ".so")
+endif()
 set_target_properties(hnswlib_nif PROPERTIES
     INSTALL_RPATH_USE_LINK_PATH TRUE
     BUILD_WITH_INSTALL_RPATH TRUE
@@ -68,11 +73,10 @@ elseif(UNIX AND APPLE)
     set(CMAKE_SHARED_LINKER_FLAGS "-flat_namespace -undefined suppress -undefined dynamic_lookup")
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
-
 if(WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj /wd4996 /wd4267 /wd4068")
 else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
     if (CMAKE_BUILD_TYPE STREQUAL "Debug")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g3")
     else()
