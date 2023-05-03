@@ -1,13 +1,19 @@
 defmodule HNSWLib.Helper do
   @moduledoc false
 
-  def get_keyword(opts, key, type, default, allow_nil? \\ false) do
+  def get_keyword!(opts, key, type, default, allow_nil? \\ false) do
     val = opts[key] || default
 
     if allow_nil? and val == nil do
       {:ok, val}
     else
-      get_keyword(key, opts[key] || default, type)
+      case get_keyword(key, opts[key] || default, type) do
+        {:ok, val} ->
+          {:ok, val}
+
+        {:error, reason} ->
+          raise ArgumentError, reason
+      end
     end
   end
 

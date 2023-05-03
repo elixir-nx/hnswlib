@@ -53,12 +53,12 @@ defmodule HNSWLib.Index do
   def new(space, dim, max_elements, opts \\ [])
       when (space == :l2 or space == :ip or space == :cosine) and is_integer(dim) and dim >= 0 and
              is_integer(max_elements) and max_elements >= 0 do
-    with {:ok, m} <- Helper.get_keyword(opts, :m, :non_neg_integer, 16),
+    with {:ok, m} <- Helper.get_keyword!(opts, :m, :non_neg_integer, 16),
          {:ok, ef_construction} <-
-           Helper.get_keyword(opts, :ef_construction, :non_neg_integer, 200),
-         {:ok, random_seed} <- Helper.get_keyword(opts, :random_seed, :non_neg_integer, 100),
+           Helper.get_keyword!(opts, :ef_construction, :non_neg_integer, 200),
+         {:ok, random_seed} <- Helper.get_keyword!(opts, :random_seed, :non_neg_integer, 100),
          {:ok, allow_replace_deleted} <-
-           Helper.get_keyword(opts, :allow_replace_deleted, :boolean, false),
+           Helper.get_keyword!(opts, :allow_replace_deleted, :boolean, false),
          {:ok, pid} <-
            GenServer.start(
              __MODULE__,
@@ -105,9 +105,9 @@ defmodule HNSWLib.Index do
   def knn_query(self, query, opts \\ [])
 
   def knn_query(self = %T{}, query, opts) when is_binary(query) do
-    with {:ok, k} <- Helper.get_keyword(opts, :k, :pos_integer, 1),
-         {:ok, num_threads} <- Helper.get_keyword(opts, :num_threads, :integer, -1),
-         #  {:ok, filter} <- Helper.get_keyword(opts, :filter, {:function, 1}, nil, true),
+    with {:ok, k} <- Helper.get_keyword!(opts, :k, :pos_integer, 1),
+         {:ok, num_threads} <- Helper.get_keyword!(opts, :num_threads, :integer, -1),
+         #  {:ok, filter} <- Helper.get_keyword!(opts, :filter, {:function, 1}, nil, true),
          :ok <- might_be_float_data?(query),
          features = trunc(byte_size(query) / float_size()),
          {:ok, true} <- ensure_vector_dimension(self, features, true) do
@@ -119,9 +119,9 @@ defmodule HNSWLib.Index do
   end
 
   def knn_query(self = %T{}, query, opts) when is_list(query) do
-    with {:ok, k} <- Helper.get_keyword(opts, :k, :pos_integer, 1),
-         {:ok, num_threads} <- Helper.get_keyword(opts, :num_threads, :integer, -1),
-         {:ok, filter} <- Helper.get_keyword(opts, :filter, {:function, 1}, nil, true),
+    with {:ok, k} <- Helper.get_keyword!(opts, :k, :pos_integer, 1),
+         {:ok, num_threads} <- Helper.get_keyword!(opts, :num_threads, :integer, -1),
+         {:ok, filter} <- Helper.get_keyword!(opts, :filter, {:function, 1}, nil, true),
          {:ok, {rows, features}} <- Helper.list_of_binary(query),
          {:ok, true} <- ensure_vector_dimension(self, features, true) do
       GenServer.call(
@@ -135,9 +135,9 @@ defmodule HNSWLib.Index do
   end
 
   def knn_query(self = %T{}, query = %Nx.Tensor{}, opts) do
-    with {:ok, k} <- Helper.get_keyword(opts, :k, :pos_integer, 1),
-         {:ok, num_threads} <- Helper.get_keyword(opts, :num_threads, :integer, -1),
-         {:ok, filter} <- Helper.get_keyword(opts, :filter, {:function, 1}, nil, true),
+    with {:ok, k} <- Helper.get_keyword!(opts, :k, :pos_integer, 1),
+         {:ok, num_threads} <- Helper.get_keyword!(opts, :num_threads, :integer, -1),
+         {:ok, filter} <- Helper.get_keyword!(opts, :filter, {:function, 1}, nil, true),
          {:ok, f32_data, rows, features} <- verify_data_tensor(self, query) do
       GenServer.call(self.pid, {:knn_query, f32_data, k, num_threads, filter, rows, features})
     else
@@ -224,9 +224,9 @@ defmodule HNSWLib.Index do
           {:allow_replace_deleted, boolean()}
         ]) :: :ok | {:error, String.t()}
   def load_index(self = %T{}, path, opts \\ []) when is_binary(path) and is_list(opts) do
-    with {:ok, max_elements} <- Helper.get_keyword(opts, :max_elements, :non_neg_integer, 0),
+    with {:ok, max_elements} <- Helper.get_keyword!(opts, :max_elements, :non_neg_integer, 0),
          {:ok, allow_replace_deleted} <-
-           Helper.get_keyword(opts, :allow_replace_deleted, :boolean, false) do
+           Helper.get_keyword!(opts, :allow_replace_deleted, :boolean, false) do
       GenServer.call(self.pid, {:load_index, path, max_elements, allow_replace_deleted})
     else
       {:error, reason} ->
@@ -304,8 +304,8 @@ defmodule HNSWLib.Index do
 
   def add_items(self = %T{}, data = %Nx.Tensor{}, opts) when is_list(opts) do
     with {:ok, ids} <- normalize_ids(opts[:ids]),
-         {:ok, num_threads} <- Helper.get_keyword(opts, :num_threads, :integer, -1),
-         {:ok, replace_deleted} <- Helper.get_keyword(opts, :replace_deleted, :boolean, false),
+         {:ok, num_threads} <- Helper.get_keyword!(opts, :num_threads, :integer, -1),
+         {:ok, replace_deleted} <- Helper.get_keyword!(opts, :replace_deleted, :boolean, false),
          {:ok, f32_data, rows, features} <- verify_data_tensor(self, data) do
       GenServer.call(
         self.pid,
@@ -340,7 +340,7 @@ defmodule HNSWLib.Index do
   def get_items(self = %T{}, ids, opts \\ []) do
     with {:ok, ids} <- normalize_ids(ids),
          {:ok, return} <-
-           Helper.get_keyword(opts, :return, {:atom, [:tensor, :list, :binary]}, :tensor) do
+           Helper.get_keyword!(opts, :return, {:atom, [:tensor, :list, :binary]}, :tensor) do
       GenServer.call(self.pid, {:get_items, ids, return})
     else
       {:error, reason} ->

@@ -114,9 +114,9 @@ defmodule HNSWLib.Index.Test do
 
     m = -1
 
-    assert {:error,
-            "expect keyword parameter `:m` to be a non-negative integer, got `#{inspect(m)}`"} ==
-             HNSWLib.Index.new(space, dim, max_elements, m: m)
+    assert_raise ArgumentError, "expect keyword parameter `:m` to be a non-negative integer, got `#{inspect(m)}`", fn ->
+      HNSWLib.Index.new(space, dim, max_elements, m: m)
+    end
   end
 
   test "HNSWLib.Index.new/3 with invalid keyword parameter ef_construction" do
@@ -126,9 +126,9 @@ defmodule HNSWLib.Index.Test do
 
     ef_construction = -1
 
-    assert {:error,
-            "expect keyword parameter `:ef_construction` to be a non-negative integer, got `#{inspect(ef_construction)}`"} ==
-             HNSWLib.Index.new(space, dim, max_elements, ef_construction: ef_construction)
+    assert_raise ArgumentError, "expect keyword parameter `:ef_construction` to be a non-negative integer, got `#{inspect(ef_construction)}`", fn ->
+      HNSWLib.Index.new(space, dim, max_elements, ef_construction: ef_construction)
+    end
   end
 
   test "HNSWLib.Index.new/3 with invalid keyword parameter random_seed" do
@@ -138,9 +138,9 @@ defmodule HNSWLib.Index.Test do
 
     random_seed = -1
 
-    assert {:error,
-            "expect keyword parameter `:random_seed` to be a non-negative integer, got `#{inspect(random_seed)}`"} ==
-             HNSWLib.Index.new(space, dim, max_elements, random_seed: random_seed)
+    assert_raise ArgumentError, "expect keyword parameter `:random_seed` to be a non-negative integer, got `#{inspect(random_seed)}`", fn ->
+      HNSWLib.Index.new(space, dim, max_elements, random_seed: random_seed)
+    end
   end
 
   test "HNSWLib.Index.new/3 with invalid keyword parameter allow_replace_deleted" do
@@ -150,11 +150,9 @@ defmodule HNSWLib.Index.Test do
 
     allow_replace_deleted = -1
 
-    assert {:error,
-            "expect keyword parameter `:allow_replace_deleted` to be a boolean, got `#{inspect(allow_replace_deleted)}`"} ==
-             HNSWLib.Index.new(space, dim, max_elements,
-               allow_replace_deleted: allow_replace_deleted
-             )
+    assert_raise ArgumentError, "expect keyword parameter `:allow_replace_deleted` to be a boolean, got `#{inspect(allow_replace_deleted)}`", fn ->
+      HNSWLib.Index.new(space, dim, max_elements, allow_replace_deleted: allow_replace_deleted)
+    end
   end
 
   test "HNSWLib.Index.knn_query/2 with binary" do
@@ -329,8 +327,9 @@ defmodule HNSWLib.Index.Test do
     data = <<42.0, 42.0>>
     k = :invalid
 
-    assert {:error, "expect keyword parameter `:k` to be a positive integer, got `:invalid`"} ==
-             HNSWLib.Index.knn_query(index, data, k: k)
+    assert_raise ArgumentError, "expect keyword parameter `:k` to be a positive integer, got `:invalid`", fn ->
+      HNSWLib.Index.knn_query(index, data, k: k)
+    end
   end
 
   test "HNSWLib.Index.knn_query/2 with invalid type for `num_threads`" do
@@ -341,8 +340,9 @@ defmodule HNSWLib.Index.Test do
     data = <<42.0, 42.0>>
     num_threads = :invalid
 
-    assert {:error, "expect keyword parameter `:num_threads` to be an integer, got `:invalid`"} ==
-             HNSWLib.Index.knn_query(index, data, num_threads: num_threads)
+    assert_raise ArgumentError, "expect keyword parameter `:num_threads` to be an integer, got `:invalid`", fn ->
+      HNSWLib.Index.knn_query(index, data, num_threads: num_threads)
+    end
   end
 
   # test "HNSWLib.Index.knn_query/2 with invalid type for `filter`" do

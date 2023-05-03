@@ -72,8 +72,8 @@ defmodule HNSWLib.BFIndex do
   def knn_query(self, query, opts \\ [])
 
   def knn_query(self = %T{}, query, opts) when is_binary(query) do
-    with {:ok, k} <- Helper.get_keyword(opts, :k, :pos_integer, 1),
-         #  {:ok, filter} <- Helper.get_keyword(opts, :filter, {:function, 1}, nil, true),
+    with {:ok, k} <- Helper.get_keyword!(opts, :k, :pos_integer, 1),
+         #  {:ok, filter} <- Helper.get_keyword!(opts, :filter, {:function, 1}, nil, true),
          :ok <- might_be_float_data?(query),
          features = trunc(byte_size(query) / HNSWLib.Nif.float_size()),
          {:ok, true} <- ensure_vector_dimension(self, features, true) do
@@ -85,8 +85,8 @@ defmodule HNSWLib.BFIndex do
   end
 
   def knn_query(self = %T{}, query, opts) when is_list(query) do
-    with {:ok, k} <- Helper.get_keyword(opts, :k, :pos_integer, 1),
-         {:ok, filter} <- Helper.get_keyword(opts, :filter, {:function, 1}, nil, true),
+    with {:ok, k} <- Helper.get_keyword!(opts, :k, :pos_integer, 1),
+         {:ok, filter} <- Helper.get_keyword!(opts, :filter, {:function, 1}, nil, true),
          {:ok, {rows, features}} <- Helper.list_of_binary(query),
          {:ok, true} <- ensure_vector_dimension(self, features, true) do
       GenServer.call(
@@ -100,8 +100,8 @@ defmodule HNSWLib.BFIndex do
   end
 
   def knn_query(self = %T{}, query = %Nx.Tensor{}, opts) do
-    with {:ok, k} <- Helper.get_keyword(opts, :k, :pos_integer, 1),
-         {:ok, filter} <- Helper.get_keyword(opts, :filter, {:function, 1}, nil, true),
+    with {:ok, k} <- Helper.get_keyword!(opts, :k, :pos_integer, 1),
+         {:ok, filter} <- Helper.get_keyword!(opts, :filter, {:function, 1}, nil, true),
          {:ok, f32_data, rows, features} <- verify_data_tensor(self, query) do
       GenServer.call(self.pid, {:knn_query, f32_data, k, filter, rows, features})
     else
@@ -189,7 +189,7 @@ defmodule HNSWLib.BFIndex do
           {:max_elements, non_neg_integer()}
         ]) :: :ok | {:error, String.t()}
   def load_index(self = %T{}, path, opts \\ []) when is_binary(path) and is_list(opts) do
-    with {:ok, max_elements} <- Helper.get_keyword(opts, :max_elements, :non_neg_integer, 0) do
+    with {:ok, max_elements} <- Helper.get_keyword!(opts, :max_elements, :non_neg_integer, 0) do
       GenServer.call(self.pid, {:load_index, path, max_elements})
     else
       {:error, reason} ->

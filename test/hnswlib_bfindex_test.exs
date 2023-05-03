@@ -242,8 +242,9 @@ defmodule HNSWLib.BFIndex.Test do
     data = <<42.0, 42.0>>
     k = :invalid
 
-    assert {:error, "expect keyword parameter `:k` to be a positive integer, got `:invalid`"} ==
-             HNSWLib.BFIndex.knn_query(index, data, k: k)
+    assert_raise ArgumentError, "expect keyword parameter `:k` to be a positive integer, got `:invalid`", fn ->
+      HNSWLib.BFIndex.knn_query(index, data, k: k)
+    end
   end
 
   test "HNSWLib.BFIndex.add_items/3 without specifying ids" do
