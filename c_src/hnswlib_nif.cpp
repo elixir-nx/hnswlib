@@ -16,10 +16,6 @@ ErlNifResourceType * NifResHNSWLibIndex::type = nullptr;
 ErlNifResourceType * NifResHNSWLibBFIndex::type = nullptr;
 
 static ERL_NIF_TERM hnswlib_index_new(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    if (argc != 7) {
-        return erlang::nif::error(env, "expecting 7 arguments");
-    }
-
     std::string space;
     size_t dim;
     size_t max_elements;
@@ -31,25 +27,25 @@ static ERL_NIF_TERM hnswlib_index_new(ErlNifEnv *env, int argc, const ERL_NIF_TE
     ERL_NIF_TERM ret, error;
 
     if (!erlang::nif::get_atom(env, argv[0], space)) {
-        return erlang::nif::error(env, "expect parameter `space` to be an atom");
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[1], &dim)) {
-        return erlang::nif::error(env, "expect parameter `space` to be a non-negative integer");
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[2], &max_elements)) {
-        return erlang::nif::error(env, "expect parameter `max_elements` to be a non-negative integer");
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[3], &m)) {
-        return erlang::nif::error(env, "expect parameter `m` to be a non-negative integer");
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[4], &ef_construction)) {
-        return erlang::nif::error(env, "expect parameter `ef_construction` to be a non-negative integer");
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[5], &random_seed)) {
-        return erlang::nif::error(env, "expect parameter `random_seed` to be a non-negative integer");
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[6], &allow_replace_deleted)) {
-        return erlang::nif::error(env, "expect parameter `allow_replace_deleted` to be a boolean");
+        return enif_make_badarg(env);
     }
 
     if ((index = NifResHNSWLibIndex::allocate_resource(env, error)) == nullptr) {
@@ -74,10 +70,6 @@ static ERL_NIF_TERM hnswlib_index_new(ErlNifEnv *env, int argc, const ERL_NIF_TE
 }
 
 static ERL_NIF_TERM hnswlib_index_knn_query(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    if (argc != 7) {
-        return erlang::nif::error(env, "expecting 7 arguments");
-    }
-
     NifResHNSWLibIndex * index = nullptr;
     ErlNifBinary data;
     size_t k;
@@ -87,29 +79,28 @@ static ERL_NIF_TERM hnswlib_index_knn_query(ErlNifEnv *env, int argc, const ERL_
     ERL_NIF_TERM ret, error;
 
     if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
-        return error;
+        return enif_make_badarg(env);
     }
     if (!enif_inspect_binary(env, argv[1], &data)) {
-        return erlang::nif::error(env, "expect `data` to be a binary");
+        return enif_make_badarg(env);
     }
     if (data.size % sizeof(float) != 0) {
-        return erlang::nif::error(env, (
-            std::string{"expect `data`'s size to be a multiple of "} + std::to_string(sizeof(float)) + " (sizeof(float)), got `" + std::to_string(data.size) + "` bytes").c_str());
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[2], &k) || k == 0) {
-        return erlang::nif::error(env, "expect parameter `k` to be a positive integer");
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[3], &num_threads)) {
-        return erlang::nif::error(env, "expect parameter `num_threads` to be an integer");
+        return enif_make_badarg(env);
     }
     if (!enif_is_fun(env, argv[4]) && !erlang::nif::check_nil(env, argv[4])) {
-        return erlang::nif::error(env, "expect parameter `filter` to be a function or `nil`");
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[5], &rows)) {
-        return erlang::nif::error(env, "expect parameter `rows` to be a non-negative integer");
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[6], &features)) {
-        return erlang::nif::error(env, "expect parameter `features` to be a non-negative integer");
+        return enif_make_badarg(env);
     }
 
     enif_rwlock_rlock(index->rwlock);
@@ -120,10 +111,6 @@ static ERL_NIF_TERM hnswlib_index_knn_query(ErlNifEnv *env, int argc, const ERL_
 }
 
 static ERL_NIF_TERM hnswlib_index_add_items(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    if (argc != 7) {
-        return erlang::nif::error(env, "expecting 7 arguments");
-    }
-
     NifResHNSWLibIndex * index = nullptr;
     ErlNifBinary f32_data;
     ErlNifBinary ids_binary;
@@ -134,25 +121,23 @@ static ERL_NIF_TERM hnswlib_index_add_items(ErlNifEnv *env, int argc, const ERL_
     ERL_NIF_TERM ret, error;
 
     if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
-        return error;
+        return enif_make_badarg(env);
     }
     if (!enif_inspect_binary(env, argv[1], &f32_data)) {
-        return erlang::nif::error(env, "expect `f32_data` to be a binary");
+        return enif_make_badarg(env);
     }
     if (f32_data.size % sizeof(float) != 0) {
-        return erlang::nif::error(env, (
-            std::string{"expect `f32_data`'s size to be a multiple of "} + std::to_string(sizeof(float)) + " (sizeof(float)), got `" + std::to_string(f32_data.size) + "` bytes").c_str());
+        return enif_make_badarg(env);
     }
     if (!enif_inspect_binary(env, argv[2], &ids_binary)) {
         if (!erlang::nif::check_nil(env, argv[2])) {
             if (!erlang::nif::get_list(env, argv[2], ids)) {
-                return erlang::nif::error(env, "expect `ids` to be either a binary, `nil`, or a list of non-negative integers.");
+                return enif_make_badarg(env);
             }
         }
     } else {
         if (ids_binary.size % sizeof(uint64_t) != 0) {
-            return erlang::nif::error(env, (
-                std::string{"expect `ids`'s size to be a multiple of "} + std::to_string(sizeof(uint64_t)) + " (sizeof(uint64_t)), got `" + std::to_string(ids_binary.size) + "` bytes").c_str());
+            return enif_make_badarg(env);
         } else {
             uint64_t * ptr = (uint64_t *)ids_binary.data;
             size_t count = ids_binary.size / sizeof(uint64_t);
@@ -160,16 +145,16 @@ static ERL_NIF_TERM hnswlib_index_add_items(ErlNifEnv *env, int argc, const ERL_
         }
     }
     if (!erlang::nif::get(env, argv[3], &num_threads)) {
-        return erlang::nif::error(env, "expect parameter `num_threads` to be an integer");
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[4], &replace_deleted)) {
-        return erlang::nif::error(env, "expect parameter `replace_deleted` to be a boolean");
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[5], &rows)) {
-        return erlang::nif::error(env, "expect parameter `rows` to be a non-negative integer");
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[6], &features)) {
-        return erlang::nif::error(env, "expect parameter `features` to be a non-negative integer");
+        return enif_make_badarg(env);
     }
 
     enif_rwlock_rwlock(index->rwlock);
@@ -185,19 +170,15 @@ static ERL_NIF_TERM hnswlib_index_add_items(ErlNifEnv *env, int argc, const ERL_
 }
 
 static ERL_NIF_TERM hnswlib_index_save_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    if (argc != 2) {
-        return erlang::nif::error(env, "expecting 2 arguments");
-    }
-
     NifResHNSWLibIndex * index = nullptr;
     std::string path;
     ERL_NIF_TERM ret, error;
 
     if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
-        return error;
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[1], path)) {
-        return erlang::nif::error(env, "expect parameter `path` to be a string");
+        return enif_make_badarg(env);
     }
 
     enif_rwlock_rlock(index->rwlock);
@@ -215,10 +196,6 @@ static ERL_NIF_TERM hnswlib_index_save_index(ErlNifEnv *env, int argc, const ERL
 }
 
 static ERL_NIF_TERM hnswlib_index_load_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    if (argc != 4) {
-        return erlang::nif::error(env, "expecting 4 arguments");
-    }
-
     NifResHNSWLibIndex * index = nullptr;
     std::string path;
     size_t max_elements;
@@ -226,16 +203,16 @@ static ERL_NIF_TERM hnswlib_index_load_index(ErlNifEnv *env, int argc, const ERL
     ERL_NIF_TERM ret, error;
 
     if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
-        return error;
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[1], path)) {
-        return erlang::nif::error(env, "expect parameter `path` to be a string");
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[2], &max_elements)) {
-        return erlang::nif::error(env, "expect parameter `max_elements` to be a non-negative integer");
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[3], &allow_replace_deleted)) {
-        return erlang::nif::error(env, "expect parameter `allow_replace_deleted` to be a boolean");
+        return enif_make_badarg(env);
     }
 
     enif_rwlock_rwlock(index->rwlock);
@@ -251,19 +228,15 @@ static ERL_NIF_TERM hnswlib_index_load_index(ErlNifEnv *env, int argc, const ERL
 }
 
 static ERL_NIF_TERM hnswlib_index_mark_deleted(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    if (argc != 2) {
-        return erlang::nif::error(env, "expecting 2 arguments");
-    }
-
     NifResHNSWLibIndex * index = nullptr;
     size_t label;
     ERL_NIF_TERM ret, error;
 
     if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
-        return error;
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[1], &label)) {
-        return erlang::nif::error(env, "expect parameter `label` to be a non-negative integer");
+        return enif_make_badarg(env);
     }
 
     enif_rwlock_rwlock(index->rwlock);
@@ -279,19 +252,15 @@ static ERL_NIF_TERM hnswlib_index_mark_deleted(ErlNifEnv *env, int argc, const E
 }
 
 static ERL_NIF_TERM hnswlib_index_unmark_deleted(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    if (argc != 2) {
-        return erlang::nif::error(env, "expecting 2 arguments");
-    }
-
     NifResHNSWLibIndex * index = nullptr;
     size_t label;
     ERL_NIF_TERM ret, error;
 
     if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
-        return error;
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[1], &label)) {
-        return erlang::nif::error(env, "expect parameter `label` to be a non-negative integer");
+        return enif_make_badarg(env);
     }
 
     enif_rwlock_rwlock(index->rwlock);
@@ -307,19 +276,15 @@ static ERL_NIF_TERM hnswlib_index_unmark_deleted(ErlNifEnv *env, int argc, const
 }
 
 static ERL_NIF_TERM hnswlib_index_resize_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    if (argc != 2) {
-        return erlang::nif::error(env, "expecting 2 arguments");
-    }
-
     NifResHNSWLibIndex * index = nullptr;
     size_t new_size;
     ERL_NIF_TERM ret, error;
 
     if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
-        return error;
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[1], &new_size)) {
-        return erlang::nif::error(env, "expect parameter `new_size` to be a non-negative integer");
+        return enif_make_badarg(env);
     }
 
     enif_rwlock_rwlock(index->rwlock);
@@ -337,15 +302,11 @@ static ERL_NIF_TERM hnswlib_index_resize_index(ErlNifEnv *env, int argc, const E
 }
 
 static ERL_NIF_TERM hnswlib_index_get_max_elements(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    if (argc != 1) {
-        return erlang::nif::error(env, "expecting 1 argument");
-    }
-
     NifResHNSWLibIndex * index = nullptr;
     ERL_NIF_TERM ret, error;
 
     if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
-        return error;
+        return enif_make_badarg(env);
     }
 
     size_t max_elements = index->val->getMaxElements();
@@ -353,15 +314,11 @@ static ERL_NIF_TERM hnswlib_index_get_max_elements(ErlNifEnv *env, int argc, con
 }
 
 static ERL_NIF_TERM hnswlib_index_get_current_count(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    if (argc != 1) {
-        return erlang::nif::error(env, "expecting 1 argument");
-    }
-
     NifResHNSWLibIndex * index = nullptr;
     ERL_NIF_TERM ret, error;
 
     if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
-        return error;
+        return enif_make_badarg(env);
     }
 
     size_t count = index->val->getCurrentCount();
@@ -369,34 +326,26 @@ static ERL_NIF_TERM hnswlib_index_get_current_count(ErlNifEnv *env, int argc, co
 }
 
 static ERL_NIF_TERM hnswlib_index_get_ef(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    if (argc != 1) {
-        return erlang::nif::error(env, "expecting 1 argument");
-    }
-
     NifResHNSWLibIndex * index = nullptr;
     ERL_NIF_TERM ret, error;
 
     if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
-        return error;
+        return enif_make_badarg(env);
     }
 
     return erlang::nif::ok(env, erlang::nif::make(env, (unsigned long long)(index->val->index_inited ? index->val->appr_alg->ef_ : index->val->default_ef)));
 }
 
 static ERL_NIF_TERM hnswlib_index_set_ef(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    if (argc != 2) {
-        return erlang::nif::error(env, "expecting 2 arguments");
-    }
-
     NifResHNSWLibIndex * index = nullptr;
     size_t new_ef;
     ERL_NIF_TERM ret, error;
 
     if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
-        return error;
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[1], &new_ef)) {
-        return erlang::nif::error(env, "expect parameter `new_ef` to be a non-negative integer");
+        return enif_make_badarg(env);
     }
 
     index->val->set_ef(new_ef);
@@ -404,34 +353,26 @@ static ERL_NIF_TERM hnswlib_index_set_ef(ErlNifEnv *env, int argc, const ERL_NIF
 }
 
 static ERL_NIF_TERM hnswlib_index_get_num_threads(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    if (argc != 1) {
-        return erlang::nif::error(env, "expecting 1 argument");
-    }
-
     NifResHNSWLibIndex * index = nullptr;
     ERL_NIF_TERM ret, error;
 
     if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
-        return error;
+        return enif_make_badarg(env);
     }
 
     return erlang::nif::ok(env, erlang::nif::make(env, (int64_t)index->val->num_threads_default));
 }
 
 static ERL_NIF_TERM hnswlib_index_set_num_threads(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    if (argc != 2) {
-        return erlang::nif::error(env, "expecting 2 arguments");
-    }
-
     NifResHNSWLibIndex * index = nullptr;
     int new_num_threads;
     ERL_NIF_TERM ret, error;
 
     if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
-        return error;
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[1], &new_num_threads)) {
-        return erlang::nif::error(env, (std::string{"expect parameter `num_threads` to be an integer between " + std::to_string(INT_MIN) + " and " + std::to_string(INT_MAX) +  "."}).c_str());
+        return enif_make_badarg(env);
     }
     index->val->num_threads_default = new_num_threads;
 
@@ -439,10 +380,6 @@ static ERL_NIF_TERM hnswlib_index_set_num_threads(ErlNifEnv *env, int argc, cons
 }
 
 static ERL_NIF_TERM hnswlib_index_get_items(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    if (argc != 3) {
-        return erlang::nif::error(env, "expecting 3 arguments");
-    }
-
     NifResHNSWLibIndex * index = nullptr;
     ErlNifBinary ids_binary;
     std::vector<uint64_t> ids;
@@ -450,18 +387,17 @@ static ERL_NIF_TERM hnswlib_index_get_items(ErlNifEnv *env, int argc, const ERL_
     ERL_NIF_TERM ret = 0, error;
 
     if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
-        return error;
+        return enif_make_badarg(env);
     }
     if (!enif_inspect_binary(env, argv[1], &ids_binary)) {
         if (!erlang::nif::check_nil(env, argv[1])) {
             if (!erlang::nif::get_list(env, argv[1], ids)) {
-                return erlang::nif::error(env, "expect `ids` to be either a binary, `nil`, or a list of non-negative integers.");
+                return enif_make_badarg(env);
             }
         }
     } else {
         if (ids_binary.size % sizeof(uint64_t) != 0) {
-            return erlang::nif::error(env, (
-                std::string{"expect `ids`'s size to be a multiple of "} + std::to_string(sizeof(uint64_t)) + " (sizeof(uint64_t)), got `" + std::to_string(ids_binary.size) + "` bytes").c_str());
+            return enif_make_badarg(env);
         } else {
             uint64_t * ptr = (uint64_t *)ids_binary.data;
             size_t count = ids_binary.size / sizeof(uint64_t);
@@ -469,10 +405,10 @@ static ERL_NIF_TERM hnswlib_index_get_items(ErlNifEnv *env, int argc, const ERL_
         }
     }
     if (!erlang::nif::get_atom(env, argv[2], return_type)) {
-        return erlang::nif::error(env, "expect `return` to be an atom");
+        return enif_make_badarg(env);
     }
     if (!(return_type == "tensor" || return_type == "binary" || return_type == "list")) {
-        return erlang::nif::error(env, "expect `return` to be an atom and is one of `:tensor`, `:binary` or `:list`.");
+        return enif_make_badarg(env);
     }
 
     std::vector<std::vector<float>> data;
@@ -514,15 +450,11 @@ static ERL_NIF_TERM hnswlib_index_get_items(ErlNifEnv *env, int argc, const ERL_
 }
 
 static ERL_NIF_TERM hnswlib_index_get_ids_list(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    if (argc != 1) {
-        return erlang::nif::error(env, "expecting 1 argument");
-    }
-
     NifResHNSWLibIndex * index = nullptr;
     ERL_NIF_TERM ret, error;
 
     if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
-        return error;
+        return enif_make_badarg(env);
     }
 
     enif_rwlock_rlock(index->rwlock);
@@ -536,40 +468,28 @@ static ERL_NIF_TERM hnswlib_index_get_ids_list(ErlNifEnv *env, int argc, const E
 }
 
 static ERL_NIF_TERM hnswlib_index_get_ef_construction(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    if (argc != 1) {
-        return erlang::nif::error(env, "expecting 1 argument");
-    }
-
     NifResHNSWLibIndex * index = nullptr;
     ERL_NIF_TERM ret, error;
 
     if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
-        return error;
+        return enif_make_badarg(env);
     }
 
     return erlang::nif::ok(env, erlang::nif::make(env, (unsigned long long)(index->val->index_inited ? index->val->appr_alg->ef_construction_ : 0)));
 }
 
 static ERL_NIF_TERM hnswlib_index_get_m(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    if (argc != 1) {
-        return erlang::nif::error(env, "expecting 1 argument");
-    }
-
     NifResHNSWLibIndex * index = nullptr;
     ERL_NIF_TERM ret, error;
 
     if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
-        return error;
+        return enif_make_badarg(env);
     }
 
     return erlang::nif::ok(env, erlang::nif::make(env, (unsigned long long)(index->val->index_inited ? index->val->appr_alg->M_ : 0)));
 }
 
 static ERL_NIF_TERM hnswlib_bfindex_new(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    if (argc != 3) {
-        return erlang::nif::error(env, "expecting 3 arguments");
-    }
-
     std::string space;
     size_t dim;
     size_t max_elements;
@@ -577,13 +497,13 @@ static ERL_NIF_TERM hnswlib_bfindex_new(ErlNifEnv *env, int argc, const ERL_NIF_
     ERL_NIF_TERM ret, error;
 
     if (!erlang::nif::get_atom(env, argv[0], space)) {
-        return erlang::nif::error(env, "expect parameter `space` to be an atom");
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[1], &dim)) {
-        return erlang::nif::error(env, "expect parameter `space` to be a non-negative integer");
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[2], &max_elements)) {
-        return erlang::nif::error(env, "expect parameter `max_elements` to be a non-negative integer");
+        return enif_make_badarg(env);
     }
 
     if ((index = NifResHNSWLibBFIndex::allocate_resource(env, error)) == nullptr) {
@@ -608,10 +528,6 @@ static ERL_NIF_TERM hnswlib_bfindex_new(ErlNifEnv *env, int argc, const ERL_NIF_
 }
 
 static ERL_NIF_TERM hnswlib_bfindex_knn_query(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    if (argc != 6) {
-        return erlang::nif::error(env, "expecting 6 arguments");
-    }
-
     NifResHNSWLibBFIndex * index = nullptr;
     ErlNifBinary data;
     size_t k;
@@ -620,26 +536,25 @@ static ERL_NIF_TERM hnswlib_bfindex_knn_query(ErlNifEnv *env, int argc, const ER
     ERL_NIF_TERM ret, error;
 
     if ((index = NifResHNSWLibBFIndex::get_resource(env, argv[0], error)) == nullptr) {
-        return error;
+        return enif_make_badarg(env);
     }
     if (!enif_inspect_binary(env, argv[1], &data)) {
-        return erlang::nif::error(env, "expect `data` to be a binary");
+        return enif_make_badarg(env);
     }
     if (data.size % sizeof(float) != 0) {
-        return erlang::nif::error(env, (
-            std::string{"expect `data`'s size to be a multiple of "} + std::to_string(sizeof(float)) + " (sizeof(float)), got `" + std::to_string(data.size) + "` bytes").c_str());
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[2], &k) || k == 0) {
-        return erlang::nif::error(env, "expect parameter `k` to be a positive integer");
+        return enif_make_badarg(env);
     }
     if (!enif_is_fun(env, argv[3]) && !erlang::nif::check_nil(env, argv[3])) {
-        return erlang::nif::error(env, "expect parameter `filter` to be a function or `nil`");
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[4], &rows)) {
-        return erlang::nif::error(env, "expect parameter `rows` to be a non-negative integer");
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[5], &features)) {
-        return erlang::nif::error(env, "expect parameter `features` to be a non-negative integer");
+        return enif_make_badarg(env);
     }
 
     enif_rwlock_rlock(index->rwlock);
@@ -650,10 +565,6 @@ static ERL_NIF_TERM hnswlib_bfindex_knn_query(ErlNifEnv *env, int argc, const ER
 }
 
 static ERL_NIF_TERM hnswlib_bfindex_add_items(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    if (argc != 5) {
-        return erlang::nif::error(env, "expecting 5 arguments");
-    }
-
     NifResHNSWLibBFIndex * index = nullptr;
     ErlNifBinary f32_data;
     ErlNifBinary ids_binary;
@@ -662,25 +573,23 @@ static ERL_NIF_TERM hnswlib_bfindex_add_items(ErlNifEnv *env, int argc, const ER
     ERL_NIF_TERM ret, error;
 
     if ((index = NifResHNSWLibBFIndex::get_resource(env, argv[0], error)) == nullptr) {
-        return error;
+        return enif_make_badarg(env);
     }
     if (!enif_inspect_binary(env, argv[1], &f32_data)) {
-        return erlang::nif::error(env, "expect `f32_data` to be a binary");
+        return enif_make_badarg(env);
     }
     if (f32_data.size % sizeof(float) != 0) {
-        return erlang::nif::error(env, (
-            std::string{"expect `f32_data`'s size to be a multiple of "} + std::to_string(sizeof(float)) + " (sizeof(float)), got `" + std::to_string(f32_data.size) + "` bytes").c_str());
+        return enif_make_badarg(env);
     }
     if (!enif_inspect_binary(env, argv[2], &ids_binary)) {
         if (!erlang::nif::check_nil(env, argv[2])) {
             if (!erlang::nif::get_list(env, argv[2], ids)) {
-                return erlang::nif::error(env, "expect `ids` to be either a binary, `nil`, or a list of non-negative integers.");
+                return enif_make_badarg(env);
             }
         }
     } else {
         if (ids_binary.size % sizeof(uint64_t) != 0) {
-            return erlang::nif::error(env, (
-                std::string{"expect `ids`'s size to be a multiple of "} + std::to_string(sizeof(uint64_t)) + " (sizeof(uint64_t)), got `" + std::to_string(ids_binary.size) + "` bytes").c_str());
+            return enif_make_badarg(env);
         } else {
             uint64_t * ptr = (uint64_t *)ids_binary.data;
             size_t count = ids_binary.size / sizeof(uint64_t);
@@ -688,10 +597,10 @@ static ERL_NIF_TERM hnswlib_bfindex_add_items(ErlNifEnv *env, int argc, const ER
         }
     }
     if (!erlang::nif::get(env, argv[3], &rows)) {
-        return erlang::nif::error(env, "expect parameter `rows` to be a non-negative integer");
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[4], &features)) {
-        return erlang::nif::error(env, "expect parameter `features` to be a non-negative integer");
+        return enif_make_badarg(env);
     }
 
     enif_rwlock_rwlock(index->rwlock);
@@ -707,19 +616,15 @@ static ERL_NIF_TERM hnswlib_bfindex_add_items(ErlNifEnv *env, int argc, const ER
 }
 
 static ERL_NIF_TERM hnswlib_bfindex_delete_vector(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    if (argc != 2) {
-        return erlang::nif::error(env, "expecting 2 arguments");
-    }
-
     NifResHNSWLibBFIndex * index = nullptr;
     size_t label;
     ERL_NIF_TERM ret, error;
 
     if ((index = NifResHNSWLibBFIndex::get_resource(env, argv[0], error)) == nullptr) {
-        return error;
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[1], &label)) {
-        return erlang::nif::error(env, "expect parameter `label` to be a non-negative integer");
+        return enif_make_badarg(env);
     }
 
     enif_rwlock_rwlock(index->rwlock);
@@ -730,19 +635,15 @@ static ERL_NIF_TERM hnswlib_bfindex_delete_vector(ErlNifEnv *env, int argc, cons
 }
 
 static ERL_NIF_TERM hnswlib_bfindex_save_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    if (argc != 2) {
-        return erlang::nif::error(env, "expecting 2 arguments");
-    }
-
     NifResHNSWLibBFIndex * index = nullptr;
     std::string path;
     ERL_NIF_TERM ret, error;
 
     if ((index = NifResHNSWLibBFIndex::get_resource(env, argv[0], error)) == nullptr) {
-        return error;
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[1], path)) {
-        return erlang::nif::error(env, "expect parameter `path` to be a string");
+        return enif_make_badarg(env);
     }
 
     enif_rwlock_rlock(index->rwlock);
@@ -760,23 +661,19 @@ static ERL_NIF_TERM hnswlib_bfindex_save_index(ErlNifEnv *env, int argc, const E
 }
 
 static ERL_NIF_TERM hnswlib_bfindex_load_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
-    if (argc != 3) {
-        return erlang::nif::error(env, "expecting 3 arguments");
-    }
-
     NifResHNSWLibBFIndex * index = nullptr;
     std::string path;
     size_t max_elements;
     ERL_NIF_TERM ret, error;
 
     if ((index = NifResHNSWLibBFIndex::get_resource(env, argv[0], error)) == nullptr) {
-        return error;
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[1], path)) {
-        return erlang::nif::error(env, "expect parameter `path` to be a string");
+        return enif_make_badarg(env);
     }
     if (!erlang::nif::get(env, argv[2], &max_elements)) {
-        return erlang::nif::error(env, "expect parameter `max_elements` to be a non-negative integer");
+        return enif_make_badarg(env);
     }
 
     enif_rwlock_rlock(index->rwlock);
