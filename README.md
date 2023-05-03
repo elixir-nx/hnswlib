@@ -18,7 +18,12 @@ iex> max_elements = 200
 200
 # create Index
 iex> {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
-{:ok, %HNSWLib.Index{space: :l2, dim: 2, pid: #PID<0.242.0>}}
+{:ok,
+ %HNSWLib.Index{
+   space: :l2,
+   dim: 2,
+   reference: #Reference<0.2548668725.3381002243.154990>
+ }}
 
 # add some vectors
 iex> data =
