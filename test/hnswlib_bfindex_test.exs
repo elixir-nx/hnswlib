@@ -362,8 +362,7 @@ defmodule HNSWLib.BFIndex.Test do
     assert :ok == HNSWLib.BFIndex.save_index(index, save_to)
     assert File.exists?(save_to)
 
-    {:ok, index_from_save} = HNSWLib.BFIndex.new(space, dim, max_elements)
-    assert :ok == HNSWLib.BFIndex.load_index(index_from_save, save_to)
+    {:ok, _index_from_save} = HNSWLib.BFIndex.load_index(space, dim, save_to)
 
     # cleanup
     File.rm(save_to)
@@ -384,12 +383,10 @@ defmodule HNSWLib.BFIndex.Test do
     assert :ok == HNSWLib.BFIndex.save_index(index, save_to)
     assert File.exists?(save_to)
 
-    {:ok, index_from_save} = HNSWLib.BFIndex.new(space, dim, max_elements)
-
     new_max_elements = 1
 
-    assert :ok ==
-             HNSWLib.BFIndex.load_index(index_from_save, save_to, max_elements: new_max_elements)
+    {:ok, _index_from_save} =
+      HNSWLib.BFIndex.load_index(space, dim, save_to, max_elements: new_max_elements)
 
     # cleanup
     File.rm(save_to)

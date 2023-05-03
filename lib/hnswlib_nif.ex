@@ -43,7 +43,7 @@ defmodule HNSWLib.Nif do
 
   def index_save_index(_self, _path), do: :erlang.nif_error(:not_loaded)
 
-  def index_load_index(_self, _path, _max_elements, _allow_replace_deleted),
+  def index_load_index(_space, _dim, _path, _max_elements, _allow_replace_deleted),
     do: :erlang.nif_error(:not_loaded)
 
   def index_mark_deleted(_self, _label), do: :erlang.nif_error(:not_loaded)
@@ -72,7 +72,7 @@ defmodule HNSWLib.Nif do
 
   def bfindex_save_index(_self, _path), do: :erlang.nif_error(:not_loaded)
 
-  def bfindex_load_index(_self, _path, _max_elements), do: :erlang.nif_error(:not_loaded)
+  def bfindex_load_index(_space, _dim, _path, _max_elements), do: :erlang.nif_error(:not_loaded)
 
   def float_size, do: :erlang.nif_error(:not_loaded)
 end

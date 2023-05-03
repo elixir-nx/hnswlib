@@ -561,8 +561,7 @@ defmodule HNSWLib.Index.Test do
     assert :ok == HNSWLib.Index.save_index(index, save_to)
     assert File.exists?(save_to)
 
-    {:ok, index_from_save} = HNSWLib.Index.new(space, dim, max_elements)
-    assert :ok == HNSWLib.Index.load_index(index_from_save, save_to)
+    {:ok, index_from_save} = HNSWLib.Index.load_index(space, dim, save_to)
     assert HNSWLib.Index.get_ids_list(index) == HNSWLib.Index.get_ids_list(index_from_save)
 
     assert HNSWLib.Index.get_current_count(index) ==
@@ -597,12 +596,10 @@ defmodule HNSWLib.Index.Test do
     assert :ok == HNSWLib.Index.save_index(index, save_to)
     assert File.exists?(save_to)
 
-    {:ok, index_from_save} = HNSWLib.Index.new(space, dim, max_elements)
-
     new_max_elements = 100
 
-    assert :ok ==
-             HNSWLib.Index.load_index(index_from_save, save_to, max_elements: new_max_elements)
+    {:ok, index_from_save} =
+      HNSWLib.Index.load_index(space, dim, save_to, max_elements: new_max_elements)
 
     assert HNSWLib.Index.get_ids_list(index) == HNSWLib.Index.get_ids_list(index_from_save)
 

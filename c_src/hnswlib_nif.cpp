@@ -196,29 +196,45 @@ static ERL_NIF_TERM hnswlib_index_save_index(ErlNifEnv *env, int argc, const ERL
 
 static ERL_NIF_TERM hnswlib_index_load_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     NifResHNSWLibIndex * index = nullptr;
+    std::string space;
+    size_t dim;
     std::string path;
     size_t max_elements;
     bool allow_replace_deleted;
     ERL_NIF_TERM ret, error;
 
-    if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
+    if (!erlang::nif::get_atom(env, argv[0], space)) {
         return enif_make_badarg(env);
     }
-    if (!erlang::nif::get(env, argv[1], path)) {
+    if (!erlang::nif::get(env, argv[1], &dim)) {
         return enif_make_badarg(env);
     }
-    if (!erlang::nif::get(env, argv[2], &max_elements)) {
+    if (!erlang::nif::get(env, argv[2], path)) {
         return enif_make_badarg(env);
     }
-    if (!erlang::nif::get(env, argv[3], &allow_replace_deleted)) {
+    if (!erlang::nif::get(env, argv[3], &max_elements)) {
         return enif_make_badarg(env);
+    }
+    if (!erlang::nif::get(env, argv[4], &allow_replace_deleted)) {
+        return enif_make_badarg(env);
+    }
+
+    if ((index = NifResHNSWLibIndex::allocate_resource(env, error)) == nullptr) {
+        return error;
     }
 
     enif_rwlock_rwlock(index->rwlock);
     try {
+        index->val = new Index<float>(space, dim);
         index->val->loadIndex(path, max_elements, allow_replace_deleted);
-        ret = erlang::nif::ok(env);
+
+        ret = erlang::nif::ok(env, enif_make_resource(env, index));
+        enif_release_resource(index);
     } catch (std::runtime_error &err) {
+        if (index->val) {
+            delete index->val;
+        }
+        enif_release_resource(index);
         ret = erlang::nif::error(env, err.what());
     }
     enif_rwlock_rwunlock(index->rwlock);
@@ -641,26 +657,42 @@ static ERL_NIF_TERM hnswlib_bfindex_save_index(ErlNifEnv *env, int argc, const E
 
 static ERL_NIF_TERM hnswlib_bfindex_load_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     NifResHNSWLibBFIndex * index = nullptr;
+    std::string space;
+    size_t dim;
     std::string path;
     size_t max_elements;
     ERL_NIF_TERM ret, error;
 
-    if ((index = NifResHNSWLibBFIndex::get_resource(env, argv[0], error)) == nullptr) {
+    if (!erlang::nif::get_atom(env, argv[0], space)) {
         return enif_make_badarg(env);
     }
-    if (!erlang::nif::get(env, argv[1], path)) {
+    if (!erlang::nif::get(env, argv[1], &dim)) {
         return enif_make_badarg(env);
     }
-    if (!erlang::nif::get(env, argv[2], &max_elements)) {
+    if (!erlang::nif::get(env, argv[2], path)) {
         return enif_make_badarg(env);
+    }
+    if (!erlang::nif::get(env, argv[3], &max_elements)) {
+        return enif_make_badarg(env);
+    }
+
+    if ((index = NifResHNSWLibBFIndex::allocate_resource(env, error)) == nullptr) {
+        return error;
     }
 
     enif_rwlock_rlock(index->rwlock);
     try {
+        index->val = new BFIndex<float>(space, dim);
         index->val->loadIndex(path, max_elements);
-        ret = erlang::nif::ok(env);
+        
+        ret = erlang::nif::ok(env, enif_make_resource(env, index));
+        enif_release_resource(index);
     } catch (std::runtime_error &err) {
+        if (index->val) {
+            delete index->val;
+        }
         ret = erlang::nif::error(env, err.what());
+        enif_release_resource(index);
     }
     enif_rwlock_runlock(index->rwlock);
 
@@ -704,7 +736,7 @@ static ErlNifFunc nif_functions[] = {
     {"index_get_num_threads", 1, hnswlib_index_get_num_threads, 0},
     {"index_set_num_threads", 2, hnswlib_index_set_num_threads, 0},
     {"index_save_index", 2, hnswlib_index_save_index, ERL_NIF_DIRTY_JOB_IO_BOUND},
-    {"index_load_index", 4, hnswlib_index_load_index, ERL_NIF_DIRTY_JOB_IO_BOUND},
+    {"index_load_index", 5, hnswlib_index_load_index, ERL_NIF_DIRTY_JOB_IO_BOUND},
     {"index_mark_deleted", 2, hnswlib_index_mark_deleted, 0},
     {"index_unmark_deleted", 2, hnswlib_index_unmark_deleted, 0},
     {"index_resize_index", 2, hnswlib_index_resize_index, 0},
@@ -718,7 +750,7 @@ static ErlNifFunc nif_functions[] = {
     {"bfindex_add_items", 5, hnswlib_bfindex_add_items, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"bfindex_delete_vector", 2, hnswlib_bfindex_delete_vector, 0},
     {"bfindex_save_index", 2, hnswlib_bfindex_save_index, ERL_NIF_DIRTY_JOB_IO_BOUND},
-    {"bfindex_load_index", 3, hnswlib_bfindex_load_index, ERL_NIF_DIRTY_JOB_IO_BOUND},
+    {"bfindex_load_index", 4, hnswlib_bfindex_load_index, ERL_NIF_DIRTY_JOB_IO_BOUND},
 
     {"float_size", 0, hnswlib_float_size, 0}
 };

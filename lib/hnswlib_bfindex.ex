@@ -164,6 +164,18 @@ defmodule HNSWLib.BFIndex do
 
   ##### Positional Parameters
 
+  - *space*: `:cosine` | `:ip` | `:l2`.
+
+    An atom that indicates the vector space. Valid values are
+
+      - `:cosine`, cosine space
+      - `:ip`, inner product space
+      - `:l2`, L2 space
+
+  - *dim*: `non_neg_integer()`.
+
+    Number of dimensions for each vector.
+
   - *path*: `Path.t()`.
 
     Path to load the index from.
@@ -178,11 +190,24 @@ defmodule HNSWLib.BFIndex do
 
     Defaults to 0.
   """
-  @spec load_index(%T{}, Path.t(), [
+  @spec load_index(:cosine | :ip | :l2, non_neg_integer(), Path.t(), [
           {:max_elements, non_neg_integer()}
-        ]) :: :ok | {:error, String.t()}
-  def load_index(self = %T{}, path, opts \\ []) when is_binary(path) and is_list(opts) do
+        ]) :: {:ok, %T{}} | {:error, String.t()}
+  def load_index(space, dim, path, opts \\ [])
+      when (space == :l2 or space == :ip or space == :cosine) and is_integer(dim) and dim >= 0 and
+             is_binary(path) and is_list(opts) do
     max_elements = Helper.get_keyword!(opts, :max_elements, :non_neg_integer, 0)
-    HNSWLib.Nif.bfindex_load_index(self.reference, path, max_elements)
+
+    with {:ok, ref} <- HNSWLib.Nif.bfindex_load_index(space, dim, path, max_elements) do
+      {:ok,
+       %T{
+         space: space,
+         dim: dim,
+         reference: ref
+       }}
+    else
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 end
