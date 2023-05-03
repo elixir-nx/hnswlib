@@ -3,11 +3,9 @@ defmodule HNSWLib.BFIndex do
   Documentation for `HNSWLib.BFIndex`.
   """
 
-  defstruct [:space, :dim, :pid]
+  defstruct [:space, :dim, :reference]
   alias __MODULE__, as: T
   alias HNSWLib.Helper
-
-  use GenServer
 
   @doc """
   Construct a new BFIndex
@@ -35,12 +33,12 @@ defmodule HNSWLib.BFIndex do
   def new(space, dim, max_elements)
       when (space == :l2 or space == :ip or space == :cosine) and is_integer(dim) and dim >= 0 and
              is_integer(max_elements) and max_elements >= 0 do
-    with {:ok, pid} <- GenServer.start(__MODULE__, {space, dim, max_elements}) do
+    with {:ok, ref} <- HNSWLib.Nif.bfindex_new(space, dim, max_elements) do
       {:ok,
        %T{
          space: space,
          dim: dim,
-         pid: pid
+         reference: ref
        }}
     else
       {:error, reason} ->
@@ -77,7 +75,7 @@ defmodule HNSWLib.BFIndex do
          :ok <- might_be_float_data?(query),
          features = trunc(byte_size(query) / HNSWLib.Nif.float_size()),
          {:ok, true} <- ensure_vector_dimension(self, features, true) do
-      GenServer.call(self.pid, {:knn_query, query, k, nil, 1, features})
+      _do_knn_query(self, query, k, nil, 1, features)
     else
       {:error, reason} ->
         {:error, reason}
@@ -89,10 +87,7 @@ defmodule HNSWLib.BFIndex do
          {:ok, filter} <- Helper.get_keyword!(opts, :filter, {:function, 1}, nil, true),
          {:ok, {rows, features}} <- Helper.list_of_binary(query),
          {:ok, true} <- ensure_vector_dimension(self, features, true) do
-      GenServer.call(
-        self.pid,
-        {:knn_query, IO.iodata_to_binary(query), k, filter, rows, features}
-      )
+      _do_knn_query(self, IO.iodata_to_binary(query), k, filter, rows, features)
     else
       {:error, reason} ->
         {:error, reason}
@@ -103,8 +98,20 @@ defmodule HNSWLib.BFIndex do
     with {:ok, k} <- Helper.get_keyword!(opts, :k, :pos_integer, 1),
          {:ok, filter} <- Helper.get_keyword!(opts, :filter, {:function, 1}, nil, true),
          {:ok, f32_data, rows, features} <- verify_data_tensor(self, query) do
-      GenServer.call(self.pid, {:knn_query, f32_data, k, filter, rows, features})
+      _do_knn_query(self, f32_data, k, filter, rows, features)
     else
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp _do_knn_query(self, query, k, filter, rows, features) do
+    case HNSWLib.Nif.bfindex_knn_query(self.reference, query, k, filter, rows, features) do
+      {:ok, labels, dists, rows, k, label_bits, dist_bits} ->
+        labels = Nx.reshape(Nx.from_binary(labels, :"u#{label_bits}"), {rows, k})
+        dists = Nx.reshape(Nx.from_binary(dists, :"f#{dist_bits}"), {rows, k})
+        {:ok, labels, dists}
+
       {:error, reason} ->
         {:error, reason}
     end
@@ -138,7 +145,7 @@ defmodule HNSWLib.BFIndex do
   def add_items(self = %T{}, data = %Nx.Tensor{}, opts) when is_list(opts) do
     with {:ok, ids} <- normalize_ids(opts[:ids]),
          {:ok, f32_data, rows, features} <- verify_data_tensor(self, data) do
-      GenServer.call(self.pid, {:add_items, f32_data, ids, rows, features})
+      HNSWLib.Nif.bfindex_add_items(self.reference, f32_data, ids, rows, features)
     else
       {:error, reason} ->
         {:error, reason}
@@ -149,7 +156,7 @@ defmodule HNSWLib.BFIndex do
   Delete vectors with the given labels from the index.
   """
   def delete_vector(self = %T{}, label) when is_integer(label) do
-    GenServer.call(self.pid, {:delete_vector, label})
+    HNSWLib.Nif.bfindex_delete_vector(self.reference, label)
   end
 
   @doc """
@@ -163,7 +170,7 @@ defmodule HNSWLib.BFIndex do
   """
   @spec save_index(%T{}, Path.t()) :: {:ok, integer()} | {:error, String.t()}
   def save_index(self = %T{}, path) when is_binary(path) do
-    GenServer.call(self.pid, {:save_index, path})
+    HNSWLib.Nif.bfindex_save_index(self.reference, path)
   end
 
   @doc """
@@ -190,7 +197,7 @@ defmodule HNSWLib.BFIndex do
         ]) :: :ok | {:error, String.t()}
   def load_index(self = %T{}, path, opts \\ []) when is_binary(path) and is_list(opts) do
     with {:ok, max_elements} <- Helper.get_keyword!(opts, :max_elements, :non_neg_integer, 0) do
-      GenServer.call(self.pid, {:load_index, path, max_elements})
+      HNSWLib.Nif.bfindex_load_index(self.reference, path, max_elements)
     else
       {:error, reason} ->
         {:error, reason}
@@ -256,51 +263,5 @@ defmodule HNSWLib.BFIndex do
 
   defp normalize_ids(nil) do
     {:ok, nil}
-  end
-
-  # GenServer callbacks
-
-  @impl true
-  def init({space, dim, max_elements}) do
-    case HNSWLib.Nif.bfindex_new(space, dim, max_elements) do
-      {:ok, ref} ->
-        {:ok, ref}
-
-      {:error, reason} ->
-        {:stop, {:error, reason}}
-    end
-  end
-
-  @impl true
-  def handle_call({:knn_query, data, k, filter, rows, features}, _from, self) do
-    case HNSWLib.Nif.bfindex_knn_query(self, data, k, filter, rows, features) do
-      {:ok, labels, dists, rows, k, label_bits, dist_bits} ->
-        labels = Nx.reshape(Nx.from_binary(labels, :"u#{label_bits}"), {rows, k})
-        dists = Nx.reshape(Nx.from_binary(dists, :"f#{dist_bits}"), {rows, k})
-        {:reply, {:ok, labels, dists}, self}
-
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  @impl true
-  def handle_call({:delete_vector, label}, _from, self) do
-    {:reply, HNSWLib.Nif.bfindex_delete_vector(self, label), self}
-  end
-
-  @impl true
-  def handle_call({:add_items, f32_data, ids, rows, features}, _from, self) do
-    {:reply, HNSWLib.Nif.bfindex_add_items(self, f32_data, ids, rows, features), self}
-  end
-
-  @impl true
-  def handle_call({:save_index, path}, _from, self) do
-    {:reply, HNSWLib.Nif.bfindex_save_index(self, path), self}
-  end
-
-  @impl true
-  def handle_call({:load_index, path, max_elements}, _from, self) do
-    {:reply, HNSWLib.Nif.bfindex_load_index(self, path, max_elements), self}
   end
 end

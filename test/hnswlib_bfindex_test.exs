@@ -8,28 +8,28 @@ defmodule HNSWLib.BFIndex.Test do
     max_elements = 200
     {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)
 
-    assert is_pid(index.pid)
+    assert is_reference(index.reference)
     assert space == index.space
     assert dim == index.dim
 
     dim = 12
     {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)
 
-    assert is_pid(index.pid)
+    assert is_reference(index.reference)
     assert space == index.space
     assert dim == index.dim
 
     space = :cosine
     {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)
 
-    assert is_pid(index.pid)
+    assert is_reference(index.reference)
     assert space == index.space
     assert dim == index.dim
 
     space = :ip
     {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)
 
-    assert is_pid(index.pid)
+    assert is_reference(index.reference)
     assert space == index.space
     assert dim == index.dim
   end
@@ -40,14 +40,14 @@ defmodule HNSWLib.BFIndex.Test do
     max_elements = 200
     {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)
 
-    assert is_pid(index.pid)
+    assert is_reference(index.reference)
     assert space == index.space
     assert dim == index.dim
 
     dim = 12
     {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)
 
-    assert is_pid(index.pid)
+    assert is_reference(index.reference)
     assert space == index.space
     assert dim == index.dim
   end
@@ -58,14 +58,14 @@ defmodule HNSWLib.BFIndex.Test do
     max_elements = 200
     {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)
 
-    assert is_pid(index.pid)
+    assert is_reference(index.reference)
     assert space == index.space
     assert dim == index.dim
 
     dim = 12
     {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)
 
-    assert is_pid(index.pid)
+    assert is_reference(index.reference)
     assert space == index.space
     assert dim == index.dim
   end
@@ -242,9 +242,11 @@ defmodule HNSWLib.BFIndex.Test do
     data = <<42.0, 42.0>>
     k = :invalid
 
-    assert_raise ArgumentError, "expect keyword parameter `:k` to be a positive integer, got `:invalid`", fn ->
-      HNSWLib.BFIndex.knn_query(index, data, k: k)
-    end
+    assert_raise ArgumentError,
+                 "expect keyword parameter `:k` to be a positive integer, got `:invalid`",
+                 fn ->
+                   HNSWLib.BFIndex.knn_query(index, data, k: k)
+                 end
   end
 
   test "HNSWLib.BFIndex.add_items/3 without specifying ids" do

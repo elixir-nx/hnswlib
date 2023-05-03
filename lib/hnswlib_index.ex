@@ -3,11 +3,9 @@ defmodule HNSWLib.Index do
   Documentation for `HNSWLib.Index`.
   """
 
-  defstruct [:space, :dim, :pid]
+  defstruct [:space, :dim, :reference]
   alias __MODULE__, as: T
   alias HNSWLib.Helper
-
-  use GenServer
 
   @doc """
   Construct a new Index
@@ -59,16 +57,21 @@ defmodule HNSWLib.Index do
          {:ok, random_seed} <- Helper.get_keyword!(opts, :random_seed, :non_neg_integer, 100),
          {:ok, allow_replace_deleted} <-
            Helper.get_keyword!(opts, :allow_replace_deleted, :boolean, false),
-         {:ok, pid} <-
-           GenServer.start(
-             __MODULE__,
-             {space, dim, max_elements, m, ef_construction, random_seed, allow_replace_deleted}
+         {:ok, ref} <-
+           HNSWLib.Nif.index_new(
+             space,
+             dim,
+             max_elements,
+             m,
+             ef_construction,
+             random_seed,
+             allow_replace_deleted
            ) do
       {:ok,
        %T{
          space: space,
          dim: dim,
-         pid: pid
+         reference: ref
        }}
     else
       {:error, reason} ->
@@ -111,7 +114,7 @@ defmodule HNSWLib.Index do
          :ok <- might_be_float_data?(query),
          features = trunc(byte_size(query) / float_size()),
          {:ok, true} <- ensure_vector_dimension(self, features, true) do
-      GenServer.call(self.pid, {:knn_query, query, k, num_threads, nil, 1, features})
+      _do_knn_query(self, query, k, num_threads, nil, 1, features)
     else
       {:error, reason} ->
         {:error, reason}
@@ -124,10 +127,7 @@ defmodule HNSWLib.Index do
          {:ok, filter} <- Helper.get_keyword!(opts, :filter, {:function, 1}, nil, true),
          {:ok, {rows, features}} <- Helper.list_of_binary(query),
          {:ok, true} <- ensure_vector_dimension(self, features, true) do
-      GenServer.call(
-        self.pid,
-        {:knn_query, IO.iodata_to_binary(query), k, num_threads, filter, rows, features}
-      )
+      _do_knn_query(self, IO.iodata_to_binary(query), k, num_threads, filter, rows, features)
     else
       {:error, reason} ->
         {:error, reason}
@@ -139,8 +139,20 @@ defmodule HNSWLib.Index do
          {:ok, num_threads} <- Helper.get_keyword!(opts, :num_threads, :integer, -1),
          {:ok, filter} <- Helper.get_keyword!(opts, :filter, {:function, 1}, nil, true),
          {:ok, f32_data, rows, features} <- verify_data_tensor(self, query) do
-      GenServer.call(self.pid, {:knn_query, f32_data, k, num_threads, filter, rows, features})
+      _do_knn_query(self, f32_data, k, num_threads, filter, rows, features)
     else
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp _do_knn_query(self = %T{}, query, k, num_threads, filter, rows, features) do
+    case HNSWLib.Nif.index_knn_query(self.reference, query, k, num_threads, filter, rows, features) do
+      {:ok, labels, dists, rows, k, label_bits, dist_bits} ->
+        labels = Nx.reshape(Nx.from_binary(labels, :"u#{label_bits}"), {rows, k})
+        dists = Nx.reshape(Nx.from_binary(dists, :"f#{dist_bits}"), {rows, k})
+        {:ok, labels, dists}
+
       {:error, reason} ->
         {:error, reason}
     end
@@ -151,7 +163,7 @@ defmodule HNSWLib.Index do
   """
   @spec get_ids_list(%T{}) :: {:ok, [integer()]} | {:error, String.t()}
   def get_ids_list(self = %T{}) do
-    GenServer.call(self.pid, :get_ids_list)
+    HNSWLib.Nif.index_get_ids_list(self.reference)
   end
 
   @doc """
@@ -159,7 +171,7 @@ defmodule HNSWLib.Index do
   """
   @spec get_ef(%T{}) :: {:ok, non_neg_integer()} | {:error, String.t()}
   def get_ef(self = %T{}) do
-    GenServer.call(self.pid, :get_ef)
+    HNSWLib.Nif.index_get_ef(self.reference)
   end
 
   @doc """
@@ -167,7 +179,7 @@ defmodule HNSWLib.Index do
   """
   @spec set_ef(%T{}, non_neg_integer()) :: :ok | {:error, String.t()}
   def set_ef(self = %T{}, new_ef) when is_integer(new_ef) and new_ef >= 0 do
-    GenServer.call(self.pid, {:set_ef, new_ef})
+    HNSWLib.Nif.index_set_ef(self.reference, new_ef)
   end
 
   @doc """
@@ -175,7 +187,7 @@ defmodule HNSWLib.Index do
   """
   @spec get_num_threads(%T{}) :: {:ok, integer()} | {:error, String.t()}
   def get_num_threads(self = %T{}) do
-    GenServer.call(self.pid, :get_num_threads)
+    HNSWLib.Nif.index_get_num_threads(self.reference)
   end
 
   @doc """
@@ -183,7 +195,7 @@ defmodule HNSWLib.Index do
   """
   @spec set_num_threads(%T{}, integer()) :: {:ok, integer()} | {:error, String.t()}
   def set_num_threads(self = %T{}, new_num_threads) do
-    GenServer.call(self.pid, {:set_num_threads, new_num_threads})
+    HNSWLib.Nif.index_set_num_threads(self.reference, new_num_threads)
   end
 
   @doc """
@@ -197,7 +209,7 @@ defmodule HNSWLib.Index do
   """
   @spec save_index(%T{}, Path.t()) :: {:ok, integer()} | {:error, String.t()}
   def save_index(self = %T{}, path) when is_binary(path) do
-    GenServer.call(self.pid, {:save_index, path})
+    HNSWLib.Nif.index_save_index(self.reference, path)
   end
 
   @doc """
@@ -227,7 +239,7 @@ defmodule HNSWLib.Index do
     with {:ok, max_elements} <- Helper.get_keyword!(opts, :max_elements, :non_neg_integer, 0),
          {:ok, allow_replace_deleted} <-
            Helper.get_keyword!(opts, :allow_replace_deleted, :boolean, false) do
-      GenServer.call(self.pid, {:load_index, path, max_elements, allow_replace_deleted})
+      HNSWLib.Nif.index_load_index(self.reference, path, max_elements, allow_replace_deleted)
     else
       {:error, reason} ->
         {:error, reason}
@@ -245,7 +257,7 @@ defmodule HNSWLib.Index do
   """
   @spec mark_deleted(%T{}, non_neg_integer()) :: :ok | {:error, String.t()}
   def mark_deleted(self = %T{}, label) when is_integer(label) and label >= 0 do
-    GenServer.call(self.pid, {:mark_deleted, label})
+    HNSWLib.Nif.index_mark_deleted(self.reference, label)
   end
 
   @doc """
@@ -259,7 +271,7 @@ defmodule HNSWLib.Index do
   """
   @spec unmark_deleted(%T{}, non_neg_integer()) :: :ok | {:error, String.t()}
   def unmark_deleted(self = %T{}, label) when is_integer(label) and label >= 0 do
-    GenServer.call(self.pid, {:unmark_deleted, label})
+    HNSWLib.Nif.index_unmark_deleted(self.reference, label)
   end
 
   @doc """
@@ -307,9 +319,14 @@ defmodule HNSWLib.Index do
          {:ok, num_threads} <- Helper.get_keyword!(opts, :num_threads, :integer, -1),
          {:ok, replace_deleted} <- Helper.get_keyword!(opts, :replace_deleted, :boolean, false),
          {:ok, f32_data, rows, features} <- verify_data_tensor(self, data) do
-      GenServer.call(
-        self.pid,
-        {:add_items, f32_data, ids, num_threads, replace_deleted, rows, features}
+      HNSWLib.Nif.index_add_items(
+        self.reference,
+        f32_data,
+        ids,
+        num_threads,
+        replace_deleted,
+        rows,
+        features
       )
     else
       {:error, reason} ->
@@ -340,8 +357,23 @@ defmodule HNSWLib.Index do
   def get_items(self = %T{}, ids, opts \\ []) do
     with {:ok, ids} <- normalize_ids(ids),
          {:ok, return} <-
-           Helper.get_keyword!(opts, :return, {:atom, [:tensor, :list, :binary]}, :tensor) do
-      GenServer.call(self.pid, {:get_items, ids, return})
+           Helper.get_keyword!(opts, :return, {:atom, [:tensor, :list, :binary]}, :tensor),
+         {:ok, data} <- HNSWLib.Nif.index_get_items(self.reference, ids, return) do
+      return_val =
+        case return do
+          :tensor ->
+            Enum.map(data, fn bin ->
+              Nx.from_binary(bin, :f32)
+            end)
+
+          :binary ->
+            data
+
+          :list ->
+            data
+        end
+
+      {:ok, return_val}
     else
       {:error, reason} ->
         {:error, reason}
@@ -359,7 +391,7 @@ defmodule HNSWLib.Index do
   """
   @spec resize_index(%T{}, non_neg_integer()) :: :ok | {:error, String.t()}
   def resize_index(self = %T{}, new_size) when is_integer(new_size) and new_size >= 0 do
-    GenServer.call(self.pid, {:resize_index, new_size})
+    HNSWLib.Nif.index_resize_index(self.reference, new_size)
   end
 
   @doc """
@@ -367,7 +399,7 @@ defmodule HNSWLib.Index do
   """
   @spec get_max_elements(%T{}) :: {:ok, integer()} | {:error, String.t()}
   def get_max_elements(self = %T{}) do
-    GenServer.call(self.pid, :get_max_elements)
+    HNSWLib.Nif.index_get_max_elements(self.reference)
   end
 
   @doc """
@@ -375,7 +407,7 @@ defmodule HNSWLib.Index do
   """
   @spec get_current_count(%T{}) :: {:ok, integer()} | {:error, String.t()}
   def get_current_count(self = %T{}) do
-    GenServer.call(self.pid, :get_current_count)
+    HNSWLib.Nif.index_get_current_count(self.reference)
   end
 
   @doc """
@@ -383,7 +415,7 @@ defmodule HNSWLib.Index do
   """
   @spec get_ef_construction(%T{}) :: {:ok, integer()} | {:error, String.t()}
   def get_ef_construction(self = %T{}) do
-    GenServer.call(self.pid, :get_ef_construction)
+    HNSWLib.Nif.index_get_ef_construction(self.reference)
   end
 
   @doc """
@@ -391,7 +423,7 @@ defmodule HNSWLib.Index do
   """
   @spec get_m(%T{}) :: {:ok, integer()} | {:error, String.t()}
   def get_m(self = %T{}) do
-    GenServer.call(self.pid, :get_m)
+    HNSWLib.Nif.index_get_m(self.reference)
   end
 
   defp verify_data_tensor(self = %T{}, data = %Nx.Tensor{}) do
@@ -457,151 +489,5 @@ defmodule HNSWLib.Index do
 
   defp float_size do
     HNSWLib.Nif.float_size()
-  end
-
-  # GenServer callbacks
-
-  @impl true
-  def init({space, dim, max_elements, m, ef_construction, random_seed, allow_replace_deleted}) do
-    case HNSWLib.Nif.index_new(
-           space,
-           dim,
-           max_elements,
-           m,
-           ef_construction,
-           random_seed,
-           allow_replace_deleted
-         ) do
-      {:ok, ref} ->
-        {:ok, ref}
-
-      {:error, reason} ->
-        {:stop, {:error, reason}}
-    end
-  end
-
-  @impl true
-  def handle_call({:knn_query, data, k, num_threads, filter, rows, features}, _from, self) do
-    case HNSWLib.Nif.index_knn_query(self, data, k, num_threads, filter, rows, features) do
-      {:ok, labels, dists, rows, k, label_bits, dist_bits} ->
-        labels = Nx.reshape(Nx.from_binary(labels, :"u#{label_bits}"), {rows, k})
-        dists = Nx.reshape(Nx.from_binary(dists, :"f#{dist_bits}"), {rows, k})
-        {:reply, {:ok, labels, dists}, self}
-
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  @impl true
-  def handle_call(
-        {:add_items, f32_data, ids, num_threads, replace_deleted, rows, features},
-        _from,
-        self
-      ) do
-    {:reply,
-     HNSWLib.Nif.index_add_items(
-       self,
-       f32_data,
-       ids,
-       num_threads,
-       replace_deleted,
-       rows,
-       features
-     ), self}
-  end
-
-  @impl true
-  def handle_call({:get_items, ids, return}, _from, self) do
-    with {:ok, data} <- HNSWLib.Nif.index_get_items(self, ids, return) do
-      return_val =
-        case return do
-          :tensor ->
-            Enum.map(data, fn bin ->
-              Nx.from_binary(bin, :f32)
-            end)
-
-          :binary ->
-            data
-
-          :list ->
-            data
-        end
-
-      {:reply, {:ok, return_val}, self}
-    else
-      {:error, reason} ->
-        {:reply, {:error, reason}, self}
-    end
-  end
-
-  @impl true
-  def handle_call(:get_ids_list, _from, self) do
-    {:reply, HNSWLib.Nif.index_get_ids_list(self), self}
-  end
-
-  @impl true
-  def handle_call(:get_ef, _from, self) do
-    {:reply, HNSWLib.Nif.index_get_ef(self), self}
-  end
-
-  @impl true
-  def handle_call({:set_ef, new_ef}, _from, self) do
-    {:reply, HNSWLib.Nif.index_set_ef(self, new_ef), self}
-  end
-
-  @impl true
-  def handle_call(:get_num_threads, _from, self) do
-    {:reply, HNSWLib.Nif.index_get_num_threads(self), self}
-  end
-
-  @impl true
-  def handle_call({:set_num_threads, new_num_threads}, _from, self) do
-    {:reply, HNSWLib.Nif.index_set_num_threads(self, new_num_threads), self}
-  end
-
-  @impl true
-  def handle_call({:save_index, path}, _from, self) do
-    {:reply, HNSWLib.Nif.index_save_index(self, path), self}
-  end
-
-  @impl true
-  def handle_call({:load_index, path, max_elements, allow_replace_deleted}, _from, self) do
-    {:reply, HNSWLib.Nif.index_load_index(self, path, max_elements, allow_replace_deleted), self}
-  end
-
-  @impl true
-  def handle_call({:mark_deleted, label}, _from, self) do
-    {:reply, HNSWLib.Nif.index_mark_deleted(self, label), self}
-  end
-
-  @impl true
-  def handle_call({:unmark_deleted, label}, _from, self) do
-    {:reply, HNSWLib.Nif.index_unmark_deleted(self, label), self}
-  end
-
-  @impl true
-  def handle_call({:resize_index, new_size}, _from, self) do
-    {:reply, HNSWLib.Nif.index_resize_index(self, new_size), self}
-  end
-
-  @impl true
-  def handle_call(:get_max_elements, _from, self) do
-    {:reply, HNSWLib.Nif.index_get_max_elements(self), self}
-  end
-
-  @impl true
-  def handle_call(:get_current_count, _from, self) do
-    {:reply, HNSWLib.Nif.index_get_current_count(self), self}
-  end
-
-  @impl true
-  def handle_call(:get_ef_construction, _from, self) do
-    {:reply, HNSWLib.Nif.index_get_ef_construction(self), self}
-  end
-
-  @impl true
-  def handle_call(:get_m, _from, self) do
-    {:reply, HNSWLib.Nif.index_get_m(self), self}
   end
 end
