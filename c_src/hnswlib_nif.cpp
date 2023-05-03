@@ -4,7 +4,6 @@
 #include <climits>
 #include "nif_utils.hpp"
 #include "hnswlib_index.hpp"
-#include "hnswlib_nif_resource.h"
 
 #ifdef __GNUC__
 #pragma GCC diagnostic ignored "-Wunused-parameter"
