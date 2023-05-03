@@ -402,12 +402,6 @@ static ERL_NIF_TERM hnswlib_index_get_items(ErlNifEnv *env, int argc, const ERL_
             ids_count = ids_binary.size / sizeof(uint64_t);
         }
     }
-    if (!erlang::nif::get_atom(env, argv[2], return_type)) {
-        return enif_make_badarg(env);
-    }
-    if (!(return_type == "tensor" || return_type == "binary" || return_type == "list")) {
-        return enif_make_badarg(env);
-    }
 
     std::vector<std::vector<float>> data;
     bool has_error = false;
@@ -422,29 +416,17 @@ static ERL_NIF_TERM hnswlib_index_get_items(ErlNifEnv *env, int argc, const ERL_
     if (has_error) return ret;
 
     std::vector<ERL_NIF_TERM> ret_list;
-    if (return_type == "list") {
-        for (auto& d : data) {
-            ERL_NIF_TERM cur;
-            if (erlang::nif::make(env, d, cur)) {
-                return erlang::nif::error(env, "cannot allocate enough memory to hold the list");
-            }
-            ret_list.push_back(cur);
+    for (auto& d : data) {
+        ErlNifBinary bin;
+        size_t bin_size = d.size() * sizeof(float);
+        if (!enif_alloc_binary(bin_size, &bin)) {
+            return erlang::nif::error(env, "cannot allocate enough memory to hold the list");
         }
-
-        return erlang::nif::ok(env, enif_make_list_from_array(env, ret_list.data(), (unsigned)ret_list.size()));
-    } else {
-        for (auto& d : data) {
-            ErlNifBinary bin;
-            size_t bin_size = d.size() * sizeof(float);
-            if (!enif_alloc_binary(bin_size, &bin)) {
-                return erlang::nif::error(env, "cannot allocate enough memory to hold the list");
-            }
-            memcpy(bin.data, d.data(), bin_size);
-            ret_list.push_back(enif_make_binary(env, &bin));
-        }
-
-        return erlang::nif::ok(env, enif_make_list_from_array(env, ret_list.data(), (unsigned)ret_list.size()));
+        memcpy(bin.data, d.data(), bin_size);
+        ret_list.push_back(enif_make_binary(env, &bin));
     }
+
+    return erlang::nif::ok(env, enif_make_list_from_array(env, ret_list.data(), (unsigned)ret_list.size()));
 }
 
 static ERL_NIF_TERM hnswlib_index_get_ids_list(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
@@ -715,7 +697,7 @@ static ErlNifFunc nif_functions[] = {
     {"index_new", 7, hnswlib_index_new, 0},
     {"index_knn_query", 7, hnswlib_index_knn_query, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"index_add_items", 7, hnswlib_index_add_items, ERL_NIF_DIRTY_JOB_CPU_BOUND},
-    {"index_get_items", 3, hnswlib_index_get_items, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"index_get_items", 2, hnswlib_index_get_items, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"index_get_ids_list", 1, hnswlib_index_get_ids_list, 0},
     {"index_get_ef", 1, hnswlib_index_get_ef, 0},
     {"index_set_ef", 2, hnswlib_index_set_ef, 0},

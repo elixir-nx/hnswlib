@@ -448,7 +448,7 @@ defmodule HNSWLib.Index.Test do
     end
   end
 
-  test "HNSWLib.Index.get_items/3 return list" do
+  test "HNSWLib.Index.get_items/2" do
     space = :l2
     dim = 2
     max_elements = 200
@@ -460,58 +460,17 @@ defmodule HNSWLib.Index.Test do
     assert :ok == HNSWLib.Index.add_items(index, items)
     assert {:ok, [0, 1]} == HNSWLib.Index.get_ids_list(index)
 
-    assert {:ok, [[10.0, 20.0], [30.0, 40.0]]} ==
-             HNSWLib.Index.get_items(index, [0, 1], return: :list)
-
-    assert {:ok, [[30.0, 40.0]]} == HNSWLib.Index.get_items(index, [1], return: :list)
-    assert {:ok, [[10.0, 20.0]]} == HNSWLib.Index.get_items(index, [0], return: :list)
-    assert {:error, "Label not found"} == HNSWLib.Index.get_items(index, [2], return: :list)
-  end
-
-  test "HNSWLib.Index.get_items/3 return binary" do
-    space = :l2
-    dim = 2
-    max_elements = 200
-    items = Nx.tensor([[10, 20], [30, 40]], type: :f32)
-    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
-
-    assert {:ok, []} == HNSWLib.Index.get_ids_list(index)
-
-    assert :ok == HNSWLib.Index.add_items(index, items)
-    assert {:ok, [0, 1]} == HNSWLib.Index.get_ids_list(index)
-
-    {:ok, [f32_binary_0, f32_binary_1]} = HNSWLib.Index.get_items(index, [0, 1], return: :binary)
+    {:ok, [f32_binary_0, f32_binary_1]} = HNSWLib.Index.get_items(index, [0, 1])
     assert f32_binary_0 == Nx.to_binary(items[0])
     assert f32_binary_1 == Nx.to_binary(items[1])
 
-    {:ok, [f32_binary_1]} = HNSWLib.Index.get_items(index, [1], return: :binary)
+    {:ok, [f32_binary_1]} = HNSWLib.Index.get_items(index, [1])
     assert f32_binary_1 == Nx.to_binary(items[1])
 
-    {:ok, [f32_binary_0]} = HNSWLib.Index.get_items(index, [0], return: :binary)
+    {:ok, [f32_binary_0]} = HNSWLib.Index.get_items(index, [0])
     assert f32_binary_0 == Nx.to_binary(items[0])
 
-    assert {:error, "Label not found"} == HNSWLib.Index.get_items(index, [2], return: :binary)
-  end
-
-  test "HNSWLib.Index.get_items/3 return tensor" do
-    space = :l2
-    dim = 2
-    max_elements = 200
-    items = Nx.tensor([[10, 20], [30, 40]], type: :f32)
-    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
-    assert :ok == HNSWLib.Index.add_items(index, items)
-
-    {:ok, [tensor_0, tensor_1]} = HNSWLib.Index.get_items(index, [0, 1], return: :tensor)
-    assert 1 == Nx.to_number(Nx.all_close(tensor_0, items[0]))
-    assert 1 == Nx.to_number(Nx.all_close(tensor_1, items[1]))
-
-    {:ok, [tensor_1]} = HNSWLib.Index.get_items(index, [1], return: :tensor)
-    assert 1 == Nx.to_number(Nx.all_close(tensor_1, items[1]))
-
-    {:ok, [tensor_0]} = HNSWLib.Index.get_items(index, [0], return: :tensor)
-    assert 1 == Nx.to_number(Nx.all_close(tensor_0, items[0]))
-
-    assert {:error, "Label not found"} == HNSWLib.Index.get_items(index, [2], return: :tensor)
+    assert {:error, "Label not found"} == HNSWLib.Index.get_items(index, [2])
   end
 
   test "HNSWLib.Index.get_ids_list/1 when empty" do

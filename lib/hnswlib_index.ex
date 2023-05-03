@@ -330,43 +330,12 @@ defmodule HNSWLib.Index do
   - *ids*: `Nx.Tensor.t() | [non_neg_integer()]`.
 
     IDs to retrieve.
-
-  ##### Keyword Parameters
-
-  - *return*: `:tensor | :list | :binary`.
-
-    Whether to return a tensor, a list of `[numbers()]` or a list of binary.
-
-    Defaults to `:tensor`.
   """
-  @spec get_items(%T{}, Nx.Tensor.t() | [integer()], [
-          {:return, :tensor | :list | :binary}
-        ]) :: {:ok, [[number()]] | Nx.Tensor.t() | [binary()]} | {:error, String.t()}
-  def get_items(self = %T{}, ids, opts \\ []) do
-    return = Helper.get_keyword!(opts, :return, {:atom, [:tensor, :list, :binary]}, :tensor)
+  @spec get_items(%T{}, Nx.Tensor.t() | [integer()]) :: {:ok, [binary()]} | {:error, String.t()}
+  def get_items(self = %T{}, ids) do
     ids = Helper.normalize_ids!(ids)
 
-    case HNSWLib.Nif.index_get_items(self.reference, ids, return) do
-      {:ok, data} ->
-        return_val =
-          case return do
-            :tensor ->
-              Enum.map(data, fn bin ->
-                Nx.from_binary(bin, :f32)
-              end)
-
-            :binary ->
-              data
-
-            :list ->
-              data
-          end
-
-        {:ok, return_val}
-
-      {:error, reason} ->
-        {:error, reason}
-    end
+    HNSWLib.Nif.index_get_items(self.reference, ids)
   end
 
   @doc """

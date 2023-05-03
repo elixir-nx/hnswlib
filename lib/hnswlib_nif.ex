@@ -29,7 +29,7 @@ defmodule HNSWLib.Nif do
   def index_add_items(_self, _f32_data, _ids, _num_threads, _replace_deleted, _rows, _features),
     do: :erlang.nif_error(:not_loaded)
 
-  def index_get_items(_self, _ids, _return), do: :erlang.nif_error(:not_loaded)
+  def index_get_items(_self, _ids), do: :erlang.nif_error(:not_loaded)
 
   def index_get_ids_list(_self), do: :erlang.nif_error(:not_loaded)
 
