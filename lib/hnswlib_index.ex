@@ -51,13 +51,12 @@ defmodule HNSWLib.Index do
   def new(space, dim, max_elements, opts \\ [])
       when (space == :l2 or space == :ip or space == :cosine) and is_integer(dim) and dim >= 0 and
              is_integer(max_elements) and max_elements >= 0 do
-    with {:ok, m} <- Helper.get_keyword!(opts, :m, :non_neg_integer, 16),
-         {:ok, ef_construction} <-
-           Helper.get_keyword!(opts, :ef_construction, :non_neg_integer, 200),
-         {:ok, random_seed} <- Helper.get_keyword!(opts, :random_seed, :non_neg_integer, 100),
-         {:ok, allow_replace_deleted} <-
-           Helper.get_keyword!(opts, :allow_replace_deleted, :boolean, false),
-         {:ok, ref} <-
+    m = Helper.get_keyword!(opts, :m, :non_neg_integer, 16)
+    ef_construction = Helper.get_keyword!(opts, :ef_construction, :non_neg_integer, 200)
+    random_seed = Helper.get_keyword!(opts, :random_seed, :non_neg_integer, 100)
+    allow_replace_deleted = Helper.get_keyword!(opts, :allow_replace_deleted, :boolean, false)
+
+    with {:ok, ref} <-
            HNSWLib.Nif.index_new(
              space,
              dim,
@@ -108,46 +107,42 @@ defmodule HNSWLib.Index do
   def knn_query(self, query, opts \\ [])
 
   def knn_query(self = %T{}, query, opts) when is_binary(query) do
-    with {:ok, k} <- Helper.get_keyword!(opts, :k, :pos_integer, 1),
-         {:ok, num_threads} <- Helper.get_keyword!(opts, :num_threads, :integer, -1),
-         #  {:ok, filter} <- Helper.get_keyword!(opts, :filter, {:function, 1}, nil, true),
-         :ok <- might_be_float_data?(query),
-         features = trunc(byte_size(query) / float_size()),
-         {:ok, true} <- ensure_vector_dimension(self, features, true) do
-      _do_knn_query(self, query, k, num_threads, nil, 1, features)
-    else
-      {:error, reason} ->
-        {:error, reason}
-    end
+    k = Helper.get_keyword!(opts, :k, :pos_integer, 1)
+    num_threads = Helper.get_keyword!(opts, :num_threads, :integer, -1)
+    Helper.might_be_float_data!(query)
+    features = trunc(byte_size(query) / Helper.float_size())
+    Helper.ensure_vector_dimension!(self, features, true)
+
+    _do_knn_query(self, query, k, num_threads, nil, 1, features)
   end
 
   def knn_query(self = %T{}, query, opts) when is_list(query) do
-    with {:ok, k} <- Helper.get_keyword!(opts, :k, :pos_integer, 1),
-         {:ok, num_threads} <- Helper.get_keyword!(opts, :num_threads, :integer, -1),
-         {:ok, filter} <- Helper.get_keyword!(opts, :filter, {:function, 1}, nil, true),
-         {:ok, {rows, features}} <- Helper.list_of_binary(query),
-         {:ok, true} <- ensure_vector_dimension(self, features, true) do
-      _do_knn_query(self, IO.iodata_to_binary(query), k, num_threads, filter, rows, features)
-    else
-      {:error, reason} ->
-        {:error, reason}
-    end
+    k = Helper.get_keyword!(opts, :k, :pos_integer, 1)
+    num_threads = Helper.get_keyword!(opts, :num_threads, :integer, -1)
+    {rows, features} = Helper.list_of_binary(query)
+    Helper.ensure_vector_dimension!(self, features, true)
+
+    _do_knn_query(self, IO.iodata_to_binary(query), k, num_threads, nil, rows, features)
   end
 
   def knn_query(self = %T{}, query = %Nx.Tensor{}, opts) do
-    with {:ok, k} <- Helper.get_keyword!(opts, :k, :pos_integer, 1),
-         {:ok, num_threads} <- Helper.get_keyword!(opts, :num_threads, :integer, -1),
-         {:ok, filter} <- Helper.get_keyword!(opts, :filter, {:function, 1}, nil, true),
-         {:ok, f32_data, rows, features} <- verify_data_tensor(self, query) do
-      _do_knn_query(self, f32_data, k, num_threads, filter, rows, features)
-    else
-      {:error, reason} ->
-        {:error, reason}
-    end
+    k = Helper.get_keyword!(opts, :k, :pos_integer, 1)
+    num_threads = Helper.get_keyword!(opts, :num_threads, :integer, -1)
+    {f32_data, rows, features} = Helper.verify_data_tensor!(self, query)
+
+    _do_knn_query(self, f32_data, k, num_threads, nil, rows, features)
   end
 
   defp _do_knn_query(self = %T{}, query, k, num_threads, filter, rows, features) do
-    case HNSWLib.Nif.index_knn_query(self.reference, query, k, num_threads, filter, rows, features) do
+    case HNSWLib.Nif.index_knn_query(
+           self.reference,
+           query,
+           k,
+           num_threads,
+           filter,
+           rows,
+           features
+         ) do
       {:ok, labels, dists, rows, k, label_bits, dist_bits} ->
         labels = Nx.reshape(Nx.from_binary(labels, :"u#{label_bits}"), {rows, k})
         dists = Nx.reshape(Nx.from_binary(dists, :"f#{dist_bits}"), {rows, k})
@@ -236,14 +231,10 @@ defmodule HNSWLib.Index do
           {:allow_replace_deleted, boolean()}
         ]) :: :ok | {:error, String.t()}
   def load_index(self = %T{}, path, opts \\ []) when is_binary(path) and is_list(opts) do
-    with {:ok, max_elements} <- Helper.get_keyword!(opts, :max_elements, :non_neg_integer, 0),
-         {:ok, allow_replace_deleted} <-
-           Helper.get_keyword!(opts, :allow_replace_deleted, :boolean, false) do
-      HNSWLib.Nif.index_load_index(self.reference, path, max_elements, allow_replace_deleted)
-    else
-      {:error, reason} ->
-        {:error, reason}
-    end
+    max_elements = Helper.get_keyword!(opts, :max_elements, :non_neg_integer, 0)
+    allow_replace_deleted = Helper.get_keyword!(opts, :allow_replace_deleted, :boolean, false)
+
+    HNSWLib.Nif.index_load_index(self.reference, path, max_elements, allow_replace_deleted)
   end
 
   @doc """
@@ -315,23 +306,20 @@ defmodule HNSWLib.Index do
   def add_items(self, data, opts \\ [])
 
   def add_items(self = %T{}, data = %Nx.Tensor{}, opts) when is_list(opts) do
-    with {:ok, ids} <- normalize_ids(opts[:ids]),
-         {:ok, num_threads} <- Helper.get_keyword!(opts, :num_threads, :integer, -1),
-         {:ok, replace_deleted} <- Helper.get_keyword!(opts, :replace_deleted, :boolean, false),
-         {:ok, f32_data, rows, features} <- verify_data_tensor(self, data) do
-      HNSWLib.Nif.index_add_items(
-        self.reference,
-        f32_data,
-        ids,
-        num_threads,
-        replace_deleted,
-        rows,
-        features
-      )
-    else
-      {:error, reason} ->
-        {:error, reason}
-    end
+    num_threads = Helper.get_keyword!(opts, :num_threads, :integer, -1)
+    replace_deleted = Helper.get_keyword!(opts, :replace_deleted, :boolean, false)
+    ids = Helper.normalize_ids!(opts[:ids])
+    {f32_data, rows, features} = Helper.verify_data_tensor!(self, data)
+
+    HNSWLib.Nif.index_add_items(
+      self.reference,
+      f32_data,
+      ids,
+      num_threads,
+      replace_deleted,
+      rows,
+      features
+    )
   end
 
   @doc """
@@ -355,26 +343,27 @@ defmodule HNSWLib.Index do
           {:return, :tensor | :list | :binary}
         ]) :: {:ok, [[number()]] | Nx.Tensor.t() | [binary()]} | {:error, String.t()}
   def get_items(self = %T{}, ids, opts \\ []) do
-    with {:ok, ids} <- normalize_ids(ids),
-         {:ok, return} <-
-           Helper.get_keyword!(opts, :return, {:atom, [:tensor, :list, :binary]}, :tensor),
-         {:ok, data} <- HNSWLib.Nif.index_get_items(self.reference, ids, return) do
-      return_val =
-        case return do
-          :tensor ->
-            Enum.map(data, fn bin ->
-              Nx.from_binary(bin, :f32)
-            end)
+    return = Helper.get_keyword!(opts, :return, {:atom, [:tensor, :list, :binary]}, :tensor)
+    ids = Helper.normalize_ids!(ids)
 
-          :binary ->
-            data
+    case HNSWLib.Nif.index_get_items(self.reference, ids, return) do
+      {:ok, data} ->
+        return_val =
+          case return do
+            :tensor ->
+              Enum.map(data, fn bin ->
+                Nx.from_binary(bin, :f32)
+              end)
 
-          :list ->
-            data
-        end
+            :binary ->
+              data
 
-      {:ok, return_val}
-    else
+            :list ->
+              data
+          end
+
+        {:ok, return_val}
+
       {:error, reason} ->
         {:error, reason}
     end
@@ -424,70 +413,5 @@ defmodule HNSWLib.Index do
   @spec get_m(%T{}) :: {:ok, integer()} | {:error, String.t()}
   def get_m(self = %T{}) do
     HNSWLib.Nif.index_get_m(self.reference)
-  end
-
-  defp verify_data_tensor(self = %T{}, data = %Nx.Tensor{}) do
-    row_features =
-      case data.shape do
-        {rows, features} ->
-          ensure_vector_dimension(self, features, {rows, features})
-
-        {features} ->
-          ensure_vector_dimension(self, features, {1, features})
-
-        shape ->
-          {:error,
-           "Input vector data wrong shape. Number of dimensions #{tuple_size(shape)}. Data must be a 1D or 2D array."}
-      end
-
-    with {:ok, {rows, features}} <- row_features do
-      {:ok, Nx.to_binary(Nx.as_type(data, :f32)), rows, features}
-    else
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  defp ensure_vector_dimension(%T{dim: dim}, dim, ret), do: {:ok, ret}
-
-  defp ensure_vector_dimension(self = %T{}, features, _ret) do
-    {:error, "Wrong dimensionality of the vectors, expect `#{self.dim}`, got `#{features}`"}
-  end
-
-  defp might_be_float_data?(data) do
-    if rem(byte_size(data), float_size()) != 0 do
-      {:error,
-       "vector feature size should be a multiple of #{HNSWLib.Nif.float_size()} (sizeof(float))"}
-    else
-      :ok
-    end
-  end
-
-  defp normalize_ids(ids = %Nx.Tensor{}) do
-    case ids.shape do
-      {_} ->
-        {:ok, Nx.to_binary(Nx.as_type(ids, :u64))}
-
-      shape ->
-        {:error, "expect ids to be a 1D array, got `#{inspect(shape)}`"}
-    end
-  end
-
-  defp normalize_ids(ids) when is_list(ids) do
-    if Enum.all?(ids, fn x ->
-         is_integer(x) and x >= 0
-       end) do
-      {:ok, ids}
-    else
-      {:error, "expect `ids` to be a list of non-negative integers"}
-    end
-  end
-
-  defp normalize_ids(nil) do
-    {:ok, nil}
-  end
-
-  defp float_size do
-    HNSWLib.Nif.float_size()
   end
 end

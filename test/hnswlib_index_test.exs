@@ -288,8 +288,11 @@ defmodule HNSWLib.Index.Test do
     {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
     data = <<42::16, 1::24>>
 
-    assert {:error, "vector feature size should be a multiple of 4 (sizeof(float))"} ==
-             HNSWLib.Index.knn_query(index, data)
+    assert_raise ArgumentError,
+                 "vector feature size should be a multiple of 4 (sizeof(float))",
+                 fn ->
+                   HNSWLib.Index.knn_query(index, data)
+                 end
   end
 
   test "HNSWLib.Index.knn_query/2 with invalid dimensions of data" do
@@ -299,8 +302,9 @@ defmodule HNSWLib.Index.Test do
     {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
     data = <<42::float-32, 42::float-32, 42::float-32>>
 
-    assert {:error, "Wrong dimensionality of the vectors, expect `2`, got `3`"} ==
-             HNSWLib.Index.knn_query(index, data)
+    assert_raise ArgumentError, "Wrong dimensionality of the vectors, expect `2`, got `3`", fn ->
+      HNSWLib.Index.knn_query(index, data)
+    end
   end
 
   test "HNSWLib.Index.knn_query/2 with inconsistent dimensions of [data]" do
@@ -310,8 +314,9 @@ defmodule HNSWLib.Index.Test do
     {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
     data = [<<42::float-32, 42::float-32>>, <<42::float-32, 42::float-32, 42::float-32>>]
 
-    assert {:error, "all vectors in the input list should have the same size"} ==
-             HNSWLib.Index.knn_query(index, data)
+    assert_raise ArgumentError, "all vectors in the input list should have the same size", fn ->
+      HNSWLib.Index.knn_query(index, data)
+    end
   end
 
   test "HNSWLib.Index.knn_query/2 with invalid dimensions of [data]" do
@@ -325,8 +330,9 @@ defmodule HNSWLib.Index.Test do
       <<42::float-32, 42::float-32, 42::float-32>>
     ]
 
-    assert {:error, "Wrong dimensionality of the vectors, expect `2`, got `3`"} ==
-             HNSWLib.Index.knn_query(index, data)
+    assert_raise ArgumentError, "Wrong dimensionality of the vectors, expect `2`, got `3`", fn ->
+      HNSWLib.Index.knn_query(index, data)
+    end
   end
 
   test "HNSWLib.Index.knn_query/2 with invalid type for `k`" do
@@ -422,8 +428,9 @@ defmodule HNSWLib.Index.Test do
 
     assert {:ok, []} == HNSWLib.Index.get_ids_list(index)
 
-    assert {:error, "Wrong dimensionality of the vectors, expect `2`, got `3`"} ==
-             HNSWLib.Index.add_items(index, items)
+    assert_raise ArgumentError, "Wrong dimensionality of the vectors, expect `2`, got `3`", fn ->
+      HNSWLib.Index.add_items(index, items)
+    end
   end
 
   test "HNSWLib.Index.add_items/3 with wrong dim of ids" do
@@ -436,8 +443,9 @@ defmodule HNSWLib.Index.Test do
 
     assert {:ok, []} == HNSWLib.Index.get_ids_list(index)
 
-    assert {:error, "expect ids to be a 1D array, got `{2, 1}`"} ==
-             HNSWLib.Index.add_items(index, items, ids: ids)
+    assert_raise ArgumentError, "expect ids to be a 1D array, got `{2, 1}`", fn ->
+      HNSWLib.Index.add_items(index, items, ids: ids)
+    end
   end
 
   test "HNSWLib.Index.get_items/3 return list" do

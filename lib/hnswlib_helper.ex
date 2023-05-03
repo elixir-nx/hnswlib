@@ -5,11 +5,11 @@ defmodule HNSWLib.Helper do
     val = opts[key] || default
 
     if allow_nil? and val == nil do
-      {:ok, val}
+      val
     else
       case get_keyword(key, opts[key] || default, type) do
         {:ok, val} ->
-          {:ok, val}
+          val
 
         {:error, reason} ->
           raise ArgumentError, reason
@@ -93,20 +93,20 @@ defmodule HNSWLib.Helper do
         expected_size = byte_size(first)
 
         if rem(expected_size, HNSWLib.Nif.float_size()) != 0 do
-          {:error,
-           "vector feature size should be a multiple of #{HNSWLib.Nif.float_size()} (sizeof(float))"}
+          raise ArgumentError,
+                "vector feature size should be a multiple of #{HNSWLib.Nif.float_size()} (sizeof(float))"
         else
           features = trunc(expected_size / HNSWLib.Nif.float_size())
 
           if list_of_binary(data, expected_size) == false do
-            {:error, "all vectors in the input list should have the same size"}
+            raise ArgumentError, "all vectors in the input list should have the same size"
           else
-            {:ok, {count, features}}
+            {count, features}
           end
         end
       end
     else
-      {:ok, {0, 0}}
+      {0, 0}
     end
   end
 
@@ -120,5 +120,64 @@ defmodule HNSWLib.Helper do
 
   defp list_of_binary([], expected_size) do
     expected_size
+  end
+
+  def verify_data_tensor!(self, data = %Nx.Tensor{}) do
+    {rows, features} =
+      case data.shape do
+        {rows, features} ->
+          ensure_vector_dimension!(self, features, {rows, features})
+
+        {features} ->
+          ensure_vector_dimension!(self, features, {1, features})
+
+        shape ->
+          raise ArgumentError,
+                "Input vector data wrong shape. Number of dimensions #{tuple_size(shape)}. Data must be a 1D or 2D array."
+      end
+
+    {Nx.to_binary(Nx.as_type(data, :f32)), rows, features}
+  end
+
+  def ensure_vector_dimension!(%{dim: dim}, dim, ret), do: ret
+
+  def ensure_vector_dimension!(%{dim: dim}, features, _ret) do
+    raise ArgumentError,
+          "Wrong dimensionality of the vectors, expect `#{dim}`, got `#{features}`"
+  end
+
+  def might_be_float_data!(data) do
+    if rem(byte_size(data), float_size()) != 0 do
+      raise ArgumentError,
+            "vector feature size should be a multiple of #{HNSWLib.Nif.float_size()} (sizeof(float))"
+    end
+  end
+
+  def normalize_ids!(ids = %Nx.Tensor{}) do
+    case ids.shape do
+      {_} ->
+        Nx.to_binary(Nx.as_type(ids, :u64))
+
+      shape ->
+        raise ArgumentError, "expect ids to be a 1D array, got `#{inspect(shape)}`"
+    end
+  end
+
+  def normalize_ids!(ids) when is_list(ids) do
+    if Enum.all?(ids, fn x ->
+         is_integer(x) and x >= 0
+       end) do
+      ids
+    else
+      raise ArgumentError, "expect `ids` to be a list of non-negative integers"
+    end
+  end
+
+  def normalize_ids!(nil) do
+    nil
+  end
+
+  def float_size do
+    HNSWLib.Nif.float_size()
   end
 end

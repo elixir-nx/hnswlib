@@ -193,8 +193,11 @@ defmodule HNSWLib.BFIndex.Test do
     {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)
     data = <<42::16, 1::24>>
 
-    assert {:error, "vector feature size should be a multiple of 4 (sizeof(float))"} ==
-             HNSWLib.BFIndex.knn_query(index, data)
+    assert_raise ArgumentError,
+                 "vector feature size should be a multiple of 4 (sizeof(float))",
+                 fn ->
+                   HNSWLib.BFIndex.knn_query(index, data)
+                 end
   end
 
   test "HNSWLib.BFIndex.knn_query/2 with invalid dimensions of data" do
@@ -204,8 +207,9 @@ defmodule HNSWLib.BFIndex.Test do
     {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)
     data = <<42::float-32, 42::float-32, 42::float-32>>
 
-    assert {:error, "Wrong dimensionality of the vectors, expect `2`, got `3`"} ==
-             HNSWLib.BFIndex.knn_query(index, data)
+    assert_raise ArgumentError, "Wrong dimensionality of the vectors, expect `2`, got `3`", fn ->
+      HNSWLib.BFIndex.knn_query(index, data)
+    end
   end
 
   test "HNSWLib.BFIndex.knn_query/2 with inconsistent dimensions of [data]" do
@@ -215,8 +219,9 @@ defmodule HNSWLib.BFIndex.Test do
     {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)
     data = [<<42::float-32, 42::float-32>>, <<42::float-32, 42::float-32, 42::float-32>>]
 
-    assert {:error, "all vectors in the input list should have the same size"} ==
-             HNSWLib.BFIndex.knn_query(index, data)
+    assert_raise ArgumentError, "all vectors in the input list should have the same size", fn ->
+      HNSWLib.BFIndex.knn_query(index, data)
+    end
   end
 
   test "HNSWLib.BFIndex.knn_query/2 with invalid dimensions of [data]" do
@@ -230,8 +235,9 @@ defmodule HNSWLib.BFIndex.Test do
       <<42::float-32, 42::float-32, 42::float-32>>
     ]
 
-    assert {:error, "Wrong dimensionality of the vectors, expect `2`, got `3`"} ==
-             HNSWLib.BFIndex.knn_query(index, data)
+    assert_raise ArgumentError, "Wrong dimensionality of the vectors, expect `2`, got `3`", fn ->
+      HNSWLib.BFIndex.knn_query(index, data)
+    end
   end
 
   test "HNSWLib.BFIndex.knn_query/2 with invalid type for `k`" do
@@ -288,8 +294,9 @@ defmodule HNSWLib.BFIndex.Test do
     items = Nx.tensor([[10, 20, 300], [30, 40, 500]], type: :f32)
     {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)
 
-    assert {:error, "Wrong dimensionality of the vectors, expect `2`, got `3`"} ==
-             HNSWLib.BFIndex.add_items(index, items)
+    assert_raise ArgumentError, "Wrong dimensionality of the vectors, expect `2`, got `3`", fn ->
+      HNSWLib.BFIndex.add_items(index, items)
+    end
   end
 
   test "HNSWLib.BFIndex.add_items/3 with wrong dim of ids" do
@@ -300,8 +307,9 @@ defmodule HNSWLib.BFIndex.Test do
     ids = Nx.tensor([[100], [200]])
     {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)
 
-    assert {:error, "expect ids to be a 1D array, got `{2, 1}`"} ==
-             HNSWLib.BFIndex.add_items(index, items, ids: ids)
+    assert_raise ArgumentError, "expect ids to be a 1D array, got `{2, 1}`", fn ->
+      HNSWLib.BFIndex.add_items(index, items, ids: ids)
+    end
   end
 
   test "HNSWLib.BFIndex.delete_vector/2" do
