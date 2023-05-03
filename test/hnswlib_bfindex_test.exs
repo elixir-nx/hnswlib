@@ -89,7 +89,7 @@ defmodule HNSWLib.BFIndex.Test do
 
     ids = [5, 6, 7, 8, 9]
 
-    query = <<41.0::float-32-little, 41.0::float-32-little>>
+    query = <<41.0::float-32-native, 41.0::float-32-native>>
     {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)
     assert :ok == HNSWLib.BFIndex.add_items(index, data, ids: ids)
 
@@ -118,8 +118,8 @@ defmodule HNSWLib.BFIndex.Test do
     ids = [5, 6, 7, 8, 9]
 
     query = [
-      <<0.0::float-32-little, 0.0::float-32-little>>,
-      <<41.0::float-32-little, 41.0::float-32-little>>
+      <<0.0::float-32-native, 0.0::float-32-native>>,
+      <<41.0::float-32-native, 41.0::float-32-native>>
     ]
 
     {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)

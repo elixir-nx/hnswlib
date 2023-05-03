@@ -167,14 +167,14 @@ defmodule HNSWLib.Helper do
     if Enum.all?(ids, fn x ->
          is_integer(x) and x >= 0
        end) do
-      ids
+      for item <- ids, into: "", do: <<item::unsigned-integer-native-64>>
     else
       raise ArgumentError, "expect `ids` to be a list of non-negative integers"
     end
   end
 
   def normalize_ids!(nil) do
-    nil
+    <<>>
   end
 
   def float_size do
