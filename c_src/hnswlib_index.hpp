@@ -255,6 +255,7 @@ class Index {
         for (auto kv : appr_alg->label_lookup_) {
             ids.push_back(kv.first);
         }
+        std::sort(ids.begin(), ids.end());
         return ids;
     }
 

@@ -368,7 +368,7 @@ defmodule HNSWLib.Index.Test do
     assert {:ok, []} == HNSWLib.Index.get_ids_list(index)
 
     assert :ok == HNSWLib.Index.add_items(index, items)
-    assert {:ok, [1, 0]} == HNSWLib.Index.get_ids_list(index)
+    assert {:ok, [0, 1]} == HNSWLib.Index.get_ids_list(index)
   end
 
   test "HNSWLib.Index.add_items/3 with specifying ids (Nx.Tensor)" do
@@ -382,7 +382,7 @@ defmodule HNSWLib.Index.Test do
     assert {:ok, []} == HNSWLib.Index.get_ids_list(index)
 
     assert :ok == HNSWLib.Index.add_items(index, items, ids: ids)
-    assert {:ok, [200, 100]} == HNSWLib.Index.get_ids_list(index)
+    assert {:ok, [100, 200]} == HNSWLib.Index.get_ids_list(index)
   end
 
   test "HNSWLib.Index.add_items/3 with specifying ids (list)" do
@@ -396,7 +396,7 @@ defmodule HNSWLib.Index.Test do
     assert {:ok, []} == HNSWLib.Index.get_ids_list(index)
 
     assert :ok == HNSWLib.Index.add_items(index, items, ids: ids)
-    assert {:ok, [200, 100]} == HNSWLib.Index.get_ids_list(index)
+    assert {:ok, [100, 200]} == HNSWLib.Index.get_ids_list(index)
   end
 
   test "HNSWLib.Index.add_items/3 with wrong dim of data tensor" do
@@ -436,7 +436,7 @@ defmodule HNSWLib.Index.Test do
     assert {:ok, []} == HNSWLib.Index.get_ids_list(index)
 
     assert :ok == HNSWLib.Index.add_items(index, items)
-    assert {:ok, [1, 0]} == HNSWLib.Index.get_ids_list(index)
+    assert {:ok, [0, 1]} == HNSWLib.Index.get_ids_list(index)
 
     assert {:ok, [[10.0, 20.0], [30.0, 40.0]]} ==
              HNSWLib.Index.get_items(index, [0, 1], return: :list)
@@ -456,7 +456,7 @@ defmodule HNSWLib.Index.Test do
     assert {:ok, []} == HNSWLib.Index.get_ids_list(index)
 
     assert :ok == HNSWLib.Index.add_items(index, items)
-    assert {:ok, [1, 0]} == HNSWLib.Index.get_ids_list(index)
+    assert {:ok, [0, 1]} == HNSWLib.Index.get_ids_list(index)
 
     {:ok, [f32_binary_0, f32_binary_1]} = HNSWLib.Index.get_items(index, [0, 1], return: :binary)
     assert f32_binary_0 == Nx.to_binary(items[0])
