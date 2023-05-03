@@ -112,7 +112,9 @@ static ERL_NIF_TERM hnswlib_index_knn_query(ErlNifEnv *env, int argc, const ERL_
         return erlang::nif::error(env, "expect parameter `features` to be a non-negative integer");
     }
 
+    enif_rwlock_rlock(index->rwlock);
     index->val->knnQuery(env, (float *)data.data, rows, features, k, num_threads, ret);
+    enif_rwlock_runlock(index->rwlock);
 
     return ret;
 }
@@ -170,13 +172,16 @@ static ERL_NIF_TERM hnswlib_index_add_items(ErlNifEnv *env, int argc, const ERL_
         return erlang::nif::error(env, "expect parameter `features` to be a non-negative integer");
     }
 
+    enif_rwlock_rwlock(index->rwlock);
     try {
         index->val->addItems((float *)f32_data.data, rows, features, ids, num_threads, replace_deleted);
+        ret = erlang::nif::ok(env);
     } catch (std::runtime_error &err) {
-        return erlang::nif::error(env, err.what());
+        ret = erlang::nif::error(env, err.what());
     }
+    enif_rwlock_rwunlock(index->rwlock);
 
-    return erlang::nif::ok(env);
+    return ret;
 }
 
 static ERL_NIF_TERM hnswlib_index_save_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
@@ -195,15 +200,18 @@ static ERL_NIF_TERM hnswlib_index_save_index(ErlNifEnv *env, int argc, const ERL
         return erlang::nif::error(env, "expect parameter `path` to be a string");
     }
 
+    enif_rwlock_rlock(index->rwlock);
     try {
         index->val->saveIndex(path);
+        ret = erlang::nif::ok(env);
     } catch (std::runtime_error &err) {
-        return erlang::nif::error(env, err.what());
+        ret = erlang::nif::error(env, err.what());
     } catch (...) {
-        return erlang::nif::error(env, "cannot save index: unknown reason");
+        ret = erlang::nif::error(env, "cannot save index: unknown reason");
     }
+    enif_rwlock_runlock(index->rwlock);
 
-    return erlang::nif::ok(env);
+    return ret;
 }
 
 static ERL_NIF_TERM hnswlib_index_load_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
@@ -230,13 +238,16 @@ static ERL_NIF_TERM hnswlib_index_load_index(ErlNifEnv *env, int argc, const ERL
         return erlang::nif::error(env, "expect parameter `allow_replace_deleted` to be a boolean");
     }
 
+    enif_rwlock_rwlock(index->rwlock);
     try {
         index->val->loadIndex(path, max_elements, allow_replace_deleted);
+        ret = erlang::nif::ok(env);
     } catch (std::runtime_error &err) {
-        return erlang::nif::error(env, err.what());
+        ret = erlang::nif::error(env, err.what());
     }
+    enif_rwlock_rwunlock(index->rwlock);
 
-    return erlang::nif::ok(env);
+    return ret;
 }
 
 static ERL_NIF_TERM hnswlib_index_mark_deleted(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
@@ -255,13 +266,16 @@ static ERL_NIF_TERM hnswlib_index_mark_deleted(ErlNifEnv *env, int argc, const E
         return erlang::nif::error(env, "expect parameter `label` to be a non-negative integer");
     }
 
+    enif_rwlock_rwlock(index->rwlock);
     try {
         index->val->markDeleted(label);
+        ret = erlang::nif::ok(env);
     } catch (std::runtime_error &err) {
-        return erlang::nif::error(env, err.what());
+        ret = erlang::nif::error(env, err.what());
     }
+    enif_rwlock_rwunlock(index->rwlock);
 
-    return erlang::nif::ok(env);
+    return ret;
 }
 
 static ERL_NIF_TERM hnswlib_index_unmark_deleted(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
@@ -280,13 +294,16 @@ static ERL_NIF_TERM hnswlib_index_unmark_deleted(ErlNifEnv *env, int argc, const
         return erlang::nif::error(env, "expect parameter `label` to be a non-negative integer");
     }
 
+    enif_rwlock_rwlock(index->rwlock);
     try {
         index->val->unmarkDeleted(label);
+        ret = erlang::nif::ok(env);
     } catch (std::runtime_error &err) {
-        return erlang::nif::error(env, err.what());
+        ret = erlang::nif::error(env, err.what());
     }
+    enif_rwlock_rwunlock(index->rwlock);
 
-    return erlang::nif::ok(env);
+    return ret;
 }
 
 static ERL_NIF_TERM hnswlib_index_resize_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
@@ -305,15 +322,18 @@ static ERL_NIF_TERM hnswlib_index_resize_index(ErlNifEnv *env, int argc, const E
         return erlang::nif::error(env, "expect parameter `new_size` to be a non-negative integer");
     }
 
+    enif_rwlock_rwlock(index->rwlock);
     try {
         index->val->resizeIndex(new_size);
+        ret = erlang::nif::ok(env);
     } catch (std::runtime_error &err) {
-        return erlang::nif::error(env, err.what());
+        ret = erlang::nif::error(env, err.what());
     } catch (std::bad_alloc&) {
-        return erlang::nif::error(env, "no enough memory available to resize the index");
+        ret = erlang::nif::error(env, "no enough memory available to resize the index");
     }
+    enif_rwlock_rwunlock(index->rwlock);
 
-    return erlang::nif::ok(env);
+    return ret;
 }
 
 static ERL_NIF_TERM hnswlib_index_get_max_elements(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
@@ -427,7 +447,7 @@ static ERL_NIF_TERM hnswlib_index_get_items(ErlNifEnv *env, int argc, const ERL_
     ErlNifBinary ids_binary;
     std::vector<uint64_t> ids;
     std::string return_type;
-    ERL_NIF_TERM ret, error;
+    ERL_NIF_TERM ret = 0, error;
 
     if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
         return error;
@@ -456,11 +476,16 @@ static ERL_NIF_TERM hnswlib_index_get_items(ErlNifEnv *env, int argc, const ERL_
     }
 
     std::vector<std::vector<float>> data;
+    bool has_error = false;
+    enif_rwlock_rwlock(index->rwlock);
     try {
         data = index->val->getDataReturnList(ids);
     } catch (std::runtime_error &err) {
-        return erlang::nif::error(env, err.what());
+        ret = erlang::nif::error(env, err.what());
+        has_error = true;
     }
+    enif_rwlock_rwunlock(index->rwlock);
+    if (has_error) return ret;
 
     std::vector<ERL_NIF_TERM> ret_list;
     if (return_type == "list") {
@@ -500,7 +525,9 @@ static ERL_NIF_TERM hnswlib_index_get_ids_list(ErlNifEnv *env, int argc, const E
         return error;
     }
 
+    enif_rwlock_rlock(index->rwlock);
     std::vector<hnswlib::labeltype> ids = index->val->getIdsList();
+    enif_rwlock_runlock(index->rwlock);
     if (erlang::nif::make(env, ids, ret)) {
         return erlang::nif::error(env, "cannot allocate enough memory to hold the list");
     }
@@ -615,7 +642,9 @@ static ERL_NIF_TERM hnswlib_bfindex_knn_query(ErlNifEnv *env, int argc, const ER
         return erlang::nif::error(env, "expect parameter `features` to be a non-negative integer");
     }
 
+    enif_rwlock_rlock(index->rwlock);
     index->val->knnQuery(env, (float *)data.data, rows, features, k, ret);
+    enif_rwlock_runlock(index->rwlock);
 
     return ret;
 }
@@ -665,13 +694,16 @@ static ERL_NIF_TERM hnswlib_bfindex_add_items(ErlNifEnv *env, int argc, const ER
         return erlang::nif::error(env, "expect parameter `features` to be a non-negative integer");
     }
 
+    enif_rwlock_rwlock(index->rwlock);
     try {
         index->val->addItems((float *)f32_data.data, rows, features, ids);
+        ret = erlang::nif::ok(env);
     } catch (std::runtime_error &err) {
-        return erlang::nif::error(env, err.what());
+        ret = erlang::nif::error(env, err.what());
     }
+    enif_rwlock_rwunlock(index->rwlock);
 
-    return erlang::nif::ok(env);
+    return ret;
 }
 
 static ERL_NIF_TERM hnswlib_bfindex_delete_vector(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
@@ -690,7 +722,9 @@ static ERL_NIF_TERM hnswlib_bfindex_delete_vector(ErlNifEnv *env, int argc, cons
         return erlang::nif::error(env, "expect parameter `label` to be a non-negative integer");
     }
 
+    enif_rwlock_rwlock(index->rwlock);
     index->val->deleteVector(label);
+    enif_rwlock_rwunlock(index->rwlock);
 
     return erlang::nif::ok(env);
 }
@@ -711,15 +745,18 @@ static ERL_NIF_TERM hnswlib_bfindex_save_index(ErlNifEnv *env, int argc, const E
         return erlang::nif::error(env, "expect parameter `path` to be a string");
     }
 
+    enif_rwlock_rlock(index->rwlock);
     try {
         index->val->saveIndex(path);
+        ret = erlang::nif::ok(env);
     } catch (std::runtime_error &err) {
-        return erlang::nif::error(env, err.what());
+        ret = erlang::nif::error(env, err.what());
     } catch (...) {
-        return erlang::nif::error(env, "cannot save index: unknown reason");
+        ret = erlang::nif::error(env, "cannot save index: unknown reason");
     }
+    enif_rwlock_runlock(index->rwlock);
 
-    return erlang::nif::ok(env);
+    return ret;
 }
 
 static ERL_NIF_TERM hnswlib_bfindex_load_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
@@ -742,13 +779,16 @@ static ERL_NIF_TERM hnswlib_bfindex_load_index(ErlNifEnv *env, int argc, const E
         return erlang::nif::error(env, "expect parameter `max_elements` to be a non-negative integer");
     }
 
+    enif_rwlock_rlock(index->rwlock);
     try {
         index->val->loadIndex(path, max_elements);
+        ret = erlang::nif::ok(env);
     } catch (std::runtime_error &err) {
-        return erlang::nif::error(env, err.what());
+        ret = erlang::nif::error(env, err.what());
     }
+    enif_rwlock_runlock(index->rwlock);
 
-    return erlang::nif::ok(env);
+    return ret;
 }
 
 static ERL_NIF_TERM hnswlib_float_size(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {

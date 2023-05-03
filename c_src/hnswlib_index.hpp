@@ -866,12 +866,19 @@ class BFIndex {
 
 struct NifResHNSWLibIndex {
     Index<float> * val;
+    ErlNifRWLock * rwlock;
 
     static ErlNifResourceType * type;
     static NifResHNSWLibIndex * allocate_resource(ErlNifEnv * env, ERL_NIF_TERM &error) {
         NifResHNSWLibIndex * res = (NifResHNSWLibIndex *)enif_alloc_resource(NifResHNSWLibIndex::type, sizeof(NifResHNSWLibIndex));
         if (res == nullptr) {
             error = erlang::nif::error(env, "cannot allocate NifResHNSWLibIndex resource");
+            return res;
+        }
+        
+        res->rwlock = enif_rwlock_create((char *)"hnswlib.index");
+        if (res->rwlock == nullptr) {
+            error = erlang::nif::error(env, "cannot allocate rwlock for the NifResHNSWLibIndex resource");
             return res;
         }
 
@@ -893,18 +900,30 @@ struct NifResHNSWLibIndex {
                 delete res->val;
                 res->val = nullptr;
             }
+
+            if (res->rwlock) {
+                enif_rwlock_destroy(res->rwlock);
+                res->rwlock = nullptr;
+            }
         }
     }
 };
 
 struct NifResHNSWLibBFIndex {
     BFIndex<float> * val;
+    ErlNifRWLock * rwlock;
 
     static ErlNifResourceType * type;
     static NifResHNSWLibBFIndex * allocate_resource(ErlNifEnv * env, ERL_NIF_TERM &error) {
         NifResHNSWLibBFIndex * res = (NifResHNSWLibBFIndex *)enif_alloc_resource(NifResHNSWLibBFIndex::type, sizeof(NifResHNSWLibBFIndex));
         if (res == nullptr) {
             error = erlang::nif::error(env, "cannot allocate NifResHNSWLibBFIndex resource");
+            return res;
+        }
+        
+        res->rwlock = enif_rwlock_create((char *)"hnswlib.bfindex");
+        if (res->rwlock == nullptr) {
+            error = erlang::nif::error(env, "cannot allocate rwlock for the NifResHNSWLibBFIndex resource");
             return res;
         }
 
@@ -925,6 +944,11 @@ struct NifResHNSWLibBFIndex {
             if (res->val) {
                 delete res->val;
                 res->val = nullptr;
+            }
+
+            if (res->rwlock) {
+                enif_rwlock_destroy(res->rwlock);
+                res->rwlock = nullptr;
             }
         }
     }
