@@ -114,6 +114,22 @@ iex> {:ok, saved_index} = HNSWLib.Index.load_index(space, dim, "my_index.bin")
  }}
 iex> HNSWLib.Index.get_current_count(saved_index)
 {:ok, 5}
+iex> {:ok, data} = HNSWLib.Index.get_items(saved_index, [2, 0, 1])
+{:ok,
+ [
+   <<0, 0, 0, 0, 0, 0, 0, 0>>,
+   <<0, 0, 40, 66, 0, 0, 40, 66>>,
+   <<0, 0, 44, 66, 0, 0, 44, 66>>
+ ]}
+iex> tensors = Nx.stack(Enum.map(data, fn d -> Nx.from_binary(d, :f32) end))
+#Nx.Tensor<
+  f32[3][2]
+  [
+    [0.0, 0.0],
+    [42.0, 42.0],
+    [43.0, 43.0]
+  ]
+>
 ```
 
 ## Installation
