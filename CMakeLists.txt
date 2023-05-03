@@ -43,7 +43,6 @@ endif()
 set(SOURCE_FILES
     "${C_SRC}/nif_utils.cpp"
     "${C_SRC}/hnswlib_nif.cpp"
-    "${C_SRC}/hnswlib_nif_resource.cpp"
 )
 
 include_directories("${ERTS_INCLUDE_DIR}")
