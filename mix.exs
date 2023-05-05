@@ -2,11 +2,11 @@ defmodule HNSWLib.MixProject do
   use Mix.Project
 
   @version "0.1.0"
-  @github_url "https://github.com/cocoa-xu/hnswlib_elixir"
+  @github_url "https://github.com/elixir-nx/hnswlib"
 
   def project do
     [
-      app: :hnswlib_elixir,
+      app: :hnswlib,
       version: @version,
       elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
@@ -42,7 +42,7 @@ defmodule HNSWLib.MixProject do
 
   defp docs do
     [
-      main: "HNSWLib Elixir",
+      main: "HNSWLib",
       source_ref: "v#{@version}",
       source_url: @github_url
     ]
@@ -50,7 +50,6 @@ defmodule HNSWLib.MixProject do
 
   defp package() do
     [
-      name: "hnswlib_elixir",
       files: ~w(3rd_party/hnswlib c_src lib mix.exs README* LICENSE* Makefile checksum.exs),
       licenses: ["Apache-2.0"],
       links: %{"GitHub" => @github_url}

@@ -3,7 +3,7 @@ defmodule HNSWLib.Nif do
 
   @on_load :load_nif
   def load_nif do
-    nif_file = ~c"#{:code.priv_dir(:hnswlib_elixir)}/hnswlib_nif"
+    nif_file = ~c"#{:code.priv_dir(:hnswlib)}/hnswlib_nif"
 
     case :erlang.load_nif(nif_file, 0) do
       :ok -> :ok

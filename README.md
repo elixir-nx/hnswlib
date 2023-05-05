@@ -1,4 +1,4 @@
-# hnswlib_elixir
+# HNSWLib
 
 Elixir binding for the [hnswlib](https://github.com/nmslib/hnswlib) library.
 
@@ -135,17 +135,17 @@ iex> tensors = Nx.stack(Enum.map(data, fn d -> Nx.from_binary(d, :f32) end))
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `hnswlib_elixir` to your list of dependencies in `mix.exs`:
+by adding `hnswlib` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:hnswlib_elixir, "~> 0.1.0"}
+    {:hnswlib, "~> 0.1.0"}
   ]
 end
 ```
 
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/hnswlib_elixir>.
+be found at <https://hexdocs.pm/hnswlib>.
 
