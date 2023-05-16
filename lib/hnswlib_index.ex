@@ -103,7 +103,7 @@ defmodule HNSWLib.Index do
           {:k, pos_integer()},
           {:num_threads, integer()}
           # {:filter, function()}
-        ]) :: :ok | {:error, String.t()}
+        ]) :: {:ok, Nx.Tensor.t(), Nx.Tensor.t()} | {:error, String.t()}
   def knn_query(self, query, opts \\ [])
 
   def knn_query(self = %T{}, query, opts) when is_binary(query) do
