@@ -59,6 +59,7 @@ static ERL_NIF_TERM hnswlib_index_new(ErlNifEnv *env, int argc, const ERL_NIF_TE
     } catch (std::runtime_error &err) {
         if (index->val) {
             delete index->val;
+            index->val = nullptr;
         }
         enif_release_resource(index);
         return erlang::nif::error(env, err.what());
@@ -229,15 +230,15 @@ static ERL_NIF_TERM hnswlib_index_load_index(ErlNifEnv *env, int argc, const ERL
         index->val->loadIndex(path, max_elements, allow_replace_deleted);
 
         ret = erlang::nif::ok(env, enif_make_resource(env, index));
-        enif_release_resource(index);
     } catch (std::runtime_error &err) {
         if (index->val) {
             delete index->val;
+            index->val = nullptr;
         }
-        enif_release_resource(index);
         ret = erlang::nif::error(env, err.what());
     }
     enif_rwlock_rwunlock(index->rwlock);
+    enif_release_resource(index);
 
     return ret;
 }
@@ -513,6 +514,7 @@ static ERL_NIF_TERM hnswlib_bfindex_new(ErlNifEnv *env, int argc, const ERL_NIF_
     } catch (std::runtime_error &err) {
         if (index->val) {
             delete index->val;
+            index->val = nullptr;
         }
         enif_release_resource(index);
         return erlang::nif::error(env, err.what());
@@ -686,15 +688,15 @@ static ERL_NIF_TERM hnswlib_bfindex_load_index(ErlNifEnv *env, int argc, const E
         index->val->loadIndex(path, max_elements);
         
         ret = erlang::nif::ok(env, enif_make_resource(env, index));
-        enif_release_resource(index);
     } catch (std::runtime_error &err) {
         if (index->val) {
             delete index->val;
+            index->val = nullptr;
         }
         ret = erlang::nif::error(env, err.what());
-        enif_release_resource(index);
     }
     enif_rwlock_runlock(index->rwlock);
+    enif_release_resource(index);
 
     return ret;
 }
