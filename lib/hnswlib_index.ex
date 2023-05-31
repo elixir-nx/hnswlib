@@ -248,8 +248,7 @@ defmodule HNSWLib.Index do
     max_elements = Helper.get_keyword!(opts, :max_elements, :non_neg_integer, 0)
     allow_replace_deleted = Helper.get_keyword!(opts, :allow_replace_deleted, :boolean, false)
 
-    with {:existence_check, true} <- {:existence_check, File.exists?(path)},
-         {:ok, ref} <-
+    with {:ok, ref} <-
            HNSWLib.Nif.index_load_index(space, dim, path, max_elements, allow_replace_deleted) do
       {:ok,
        %T{
@@ -258,9 +257,6 @@ defmodule HNSWLib.Index do
          reference: ref
        }}
     else
-      {:existence_check, _} ->
-        {:error, "no_file"}
-
       {:error, reason} ->
         {:error, reason}
     end
