@@ -622,7 +622,7 @@ defmodule HNSWLib.Index.Test do
   test "HNSWLib.Index.load_index/3 with missing file" do
     bad_filepath = "this/file/doesnt/exist"
     refute File.exists?(bad_filepath)
-    assert {:error, "no_file"} = HNSWLib.Index.load_index(:l2, 2, bad_filepath)
+    assert {:error, "Cannot open file"} = HNSWLib.Index.load_index(:l2, 2, bad_filepath)
   end
 
   test "HNSWLib.Index.mark_deleted/2" do
