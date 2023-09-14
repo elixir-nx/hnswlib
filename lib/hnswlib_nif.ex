@@ -8,7 +8,7 @@ defmodule HNSWLib.Nif do
     case :erlang.load_nif(nif_file, 0) do
       :ok -> :ok
       {:error, {:reload, _}} -> :ok
-      {:error, reason} -> IO.puts("Failed to load nif: #{reason}")
+      {:error, reason} -> IO.puts("Failed to load nif: #{inspect(reason)}")
     end
   end
 
