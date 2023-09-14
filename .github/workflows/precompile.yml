@@ -86,6 +86,7 @@ jobs:
 
       - name: Precompile
         run: |
+          source $(brew --prefix asdf)/libexec/asdf.sh
           export ELIXIR_MAKE_CACHE_DIR=$(pwd)/cache
           mkdir -p "${ELIXIR_MAKE_CACHE_DIR}"
           mix deps.get
