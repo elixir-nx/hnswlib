@@ -17,14 +17,19 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MIX_ENV: prod
+    strategy:
+      matrix:
+        otp_version: [25, 26]
+
+    name: Linux GNU - OTP ${{ matrix.otp_version }}
 
     steps:
       - uses: actions/checkout@v3
 
       - uses: erlef/setup-beam@v1
         with:
-          otp-version: 25
-          elixir-version: 1.14
+          otp-version: ${{ matrix.otp_version }}
+          elixir-version: 1.15
 
       - name: Install system dependecies
         run: |
@@ -55,13 +60,27 @@ jobs:
     runs-on: macos-11
     env:
       MIX_ENV: prod
+      elixir_version: "1.15.2"
+    strategy:
+      matrix:
+        otp_version: ["25.3.2.3", "26.0.2"]
+
+    name: macOS - OTP ${{ matrix.otp_version }}
 
     steps:
       - uses: actions/checkout@v3
 
       - name: Install erlang and elixir
         run: |
-          brew install erlang elixir
+          brew install autoconf coreutils curl git openssl asdf
+          asdf plugin add erlang https://github.com/asdf-vm/asdf-erlang.git
+          asdf plugin-add elixir https://github.com/asdf-vm/asdf-elixir.git
+          export KERL_CONFIGURE_OPTIONS="--disable-debug --without-javac"
+          asdf install erlang ${{ matrix.otp_version }}
+          asdf install elixir ${{ env.elixir_version }}
+          asdf global erlang ${{ matrix.otp_version }}
+          asdf global elixir ${{ env.elixir_version }}
+          source $(brew --prefix asdf)/libexec/asdf.sh
           mix local.hex --force
           mix local.rebar --force
 
@@ -82,14 +101,19 @@ jobs:
     runs-on: windows-latest
     env:
       MIX_ENV: prod
+    strategy:
+      matrix:
+        otp_version: [25, 26]
+
+    name: Windows - OTP ${{ matrix.otp_version }}
 
     steps:
       - uses: actions/checkout@v3
 
       - uses: erlef/setup-beam@v1
         with:
-          otp-version: 25.1
-          elixir-version: 1.14
+          otp-version: ${{ matrix.otp_version }}
+          elixir-version: 1.15
 
       - uses: ilammy/msvc-dev-cmd@v1
         with:
