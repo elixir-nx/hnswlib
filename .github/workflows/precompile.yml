@@ -26,6 +26,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: pull docker
+        run: |
+          sudo docker pull quay.io/pypa/manylinux2014_x86_64:latest
+
       - uses: erlef/setup-beam@v1
         with:
           otp-version: ${{ matrix.otp_version }}
@@ -45,6 +49,11 @@ jobs:
 
       - name: Precompile
         run: |
+          cp .github/script-to-build-manylinux2014.sh ./
+          cp .github/do-build-manylinux2014.sh ./
+
+          bash ./script-to-build-manylinux2014.sh "${{ env.MIX_ENV }}" "${{ matrix.otp_version }}" "1.15.5"
+
           export ELIXIR_MAKE_CACHE_DIR=$(pwd)/cache
           mkdir -p "${ELIXIR_MAKE_CACHE_DIR}"
           mix deps.get
