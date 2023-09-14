@@ -6,6 +6,17 @@ PRIV_DIR = $(MIX_APP_PATH)/priv
 NIF_SO = $(PRIV_DIR)/hnswlib_nif.so
 HNSWLIB_SRC = $(shell pwd)/3rd_party/hnswlib
 C_SRC = $(shell pwd)/c_src
+
+ifdef CC_PRECOMPILER_CURRENT_TARGET
+	ifeq ($(findstring darwin, $(CC_PRECOMPILER_CURRENT_TARGET)), darwin)
+		ifeq ($(findstring aarch64, $(CC_PRECOMPILER_CURRENT_TARGET)), aarch64)
+			CMAKE_CONFIGURE_FLAGS=-D CMAKE_OSX_ARCHITECTURES=arm64
+		else
+			CMAKE_CONFIGURE_FLAGS=-D CMAKE_OSX_ARCHITECTURES=x86_64
+		endif
+	endif
+endif
+
 ifdef CMAKE_TOOLCHAIN_FILE
 	CMAKE_CONFIGURE_FLAGS=-D CMAKE_TOOLCHAIN_FILE="$(CMAKE_TOOLCHAIN_FILE)"
 endif
