@@ -13,6 +13,8 @@ defmodule HNSWLib.MixProject do
       deps: deps(),
       package: package(),
       docs: docs(),
+      main: "HNSWLib",
+      description: "Elixir binding for the hnswlib library",
       compilers: [:elixir_make] ++ Mix.compilers(),
       make_precompiler: {:nif, CCPrecompiler},
       make_precompiler_url: "#{@github_url}/releases/download/v#{@version}/@{artefact_filename}",
@@ -43,7 +45,6 @@ defmodule HNSWLib.MixProject do
 
   defp docs do
     [
-      main: "HNSWLib",
       source_ref: "v#{@version}",
       source_url: @github_url
     ]
