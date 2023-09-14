@@ -2,8 +2,12 @@
 
 Elixir binding for the [hnswlib](https://github.com/nmslib/hnswlib) library.
 
+Currently in development, alpha software.
+
 ## Usage
+
 ### Create an Index
+
 ```elixir
 # working in L2-space
 # other possible values are
@@ -28,6 +32,7 @@ iex> {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
 ```
 
 ### Add vectors to the Index
+
 ```elixir
 iex> data =
   Nx.tensor(
@@ -58,7 +63,8 @@ iex> HNSWLib.Index.get_current_count(index)
 {:ok, 5}
 ```
 
-### Query nearest vector(s) in the Index
+### Query nearest vector(s) in the index
+
 ```elixir
 # query
 iex> query = Nx.tensor([1, 2], type: :f32)
@@ -98,12 +104,14 @@ iex> {:ok, labels, dists} = HNSWLib.Index.knn_query(index, query, k: 3)
 ```
 
 ### Save an Index to file
+
 ```elixir
 iex> HNSWLib.Index.save_index(index, "my_index.bin")
 :ok
 ```
 
 ### Load an Index from file
+
 ```elixir
 iex> {:ok, saved_index} = HNSWLib.Index.load_index(space, dim, "my_index.bin")
 {:ok,
