@@ -1,7 +1,7 @@
 defmodule HNSWLib.MixProject do
   use Mix.Project
 
-  @version "0.1.1"
+  @version "0.1.2"
   @github_url "https://github.com/elixir-nx/hnswlib"
 
   def project do
@@ -52,7 +52,8 @@ defmodule HNSWLib.MixProject do
 
   defp package() do
     [
-      files: ~w(3rd_party/hnswlib c_src lib mix.exs README* LICENSE* Makefile checksum.exs),
+      files:
+        ~w(3rd_party/hnswlib c_src lib mix.exs README* LICENSE* CMakeLists.txt Makefile checksum.exs),
       licenses: ["Apache-2.0"],
       links: %{"GitHub" => @github_url}
     ]
