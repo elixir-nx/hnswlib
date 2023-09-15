@@ -26,10 +26,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: pull docker
-        run: |
-          sudo docker pull quay.io/pypa/manylinux2014_x86_64:latest
-
       - uses: erlef/setup-beam@v1
         with:
           otp-version: ${{ matrix.otp_version }}
@@ -39,21 +35,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential automake autoconf pkg-config bc m4 unzip zip \
-            gcc g++ \
-            gcc-i686-linux-gnu g++-i686-linux-gnu \
-            gcc-aarch64-linux-gnu g++-aarch64-linux-gnu \
             gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf \
             gcc-riscv64-linux-gnu g++-riscv64-linux-gnu \
-            gcc-powerpc64le-linux-gnu g++-powerpc64le-linux-gnu \
-            gcc-s390x-linux-gnu g++-s390x-linux-gnu
 
       - name: Precompile
         run: |
-          cp .github/script-to-build-manylinux2014.sh ./
-          cp .github/do-build-manylinux2014.sh ./
-
-          bash ./script-to-build-manylinux2014.sh "${{ env.MIX_ENV }}" "${{ matrix.otp_version }}" "1.15.5"
-
           export ELIXIR_MAKE_CACHE_DIR=$(pwd)/cache
           mkdir -p "${ELIXIR_MAKE_CACHE_DIR}"
           mix deps.get

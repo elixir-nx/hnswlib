@@ -1,0 +1,51 @@
+name: precompile-manylinux
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: prod
+      OPENSSL_VERSION: "3.1.1"
+      ELIXIR_VERSION: "v1.15.4"
+    strategy:
+      matrix:
+        otp_version: ["25.3.2.6", "26.0.2"]
+        arch: [x86_64, i686, aarch64, ppc64le, s390x]
+
+    name: Linux GNU - OTP ${{ matrix.otp_version }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Pull docker image
+        run: |
+          sudo docker pull quay.io/pypa/manylinux2014_${{ matrix.arch }}:latest
+
+      - name: Install binfmt
+        run: |
+          sudo apt install -y binfmt-support qemu-user-static
+
+      - name: Precompile
+        run: |
+          cp .github/script-to-build-manylinux2014.sh ./
+          cp .github/do-build-manylinux2014.sh ./
+
+          bash ./script-to-build-manylinux2014.sh "${{ env.MIX_ENV }}" "${{ matrix.otp_version }}" "${{ env.ELIXIR_VERSION }}" "${{ env.OPENSSL_VERSION }}" "${{ matrix.arch }}"
+
+      - uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            cache/*.tar.gz
