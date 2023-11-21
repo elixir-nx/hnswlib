@@ -51,3 +51,11 @@ $(NIF_SO):
 		cmake --build . $(CMAKE_BUILD_PARAMETER) && \
 		cmake --install . $(CMAKE_BUILD_PARAMETER) \
 	)
+
+cleanup:
+	@ if exist "$(NIF_SO)" ( \
+		del /f "$(NIF_SO)" \
+	)
+	@ if exist "$(CMAKE_HNSWLIB_BUILD_DIR)" ( \
+		rd  /S /Q "$(CMAKE_HNSWLIB_BUILD_DIR)" \
+	)
