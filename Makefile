@@ -15,15 +15,15 @@ ifdef CC_PRECOMPILER_CURRENT_TARGET
 			CMAKE_CONFIGURE_FLAGS=-D CMAKE_OSX_ARCHITECTURES=x86_64
 		endif
 	endif
+
+	ifeq ($(findstring manylinux2014, $(HNSWLIB_CI_PRECOMPILE)), manylinux2014)
+		CC=gcc
+		CXX=g++
+	endif
 endif
 
 ifdef CMAKE_TOOLCHAIN_FILE
 	CMAKE_CONFIGURE_FLAGS=-D CMAKE_TOOLCHAIN_FILE="$(CMAKE_TOOLCHAIN_FILE)"
-endif
-
-ifeq (${HNSWLIB_CI_PRECOMPILE}, manylinux2014)
-	CC=gcc
-	CXX=g++
 endif
 
 CMAKE_BUILD_TYPE ?= Release
