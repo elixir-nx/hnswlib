@@ -39,7 +39,8 @@ jobs:
             gcc-aarch64-linux-gnu g++-aarch64-linux-gnu \
             gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf \
             gcc-riscv64-linux-gnu g++-riscv64-linux-gnu \
-            gcc-powerpc64le-linux-gnu g++-powerpc64le-linux-gnu
+            gcc-powerpc64le-linux-gnu g++-powerpc64le-linux-gnu \
+            gcc-s390x-linux-gnu g++-s390x-linux-gnu
 
       - name: Precompile
         run: |

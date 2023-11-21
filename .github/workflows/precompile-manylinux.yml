@@ -22,7 +22,7 @@ jobs:
     strategy:
       matrix:
         otp_version: ["25.3.2.6", "26.0.2"]
-        arch: [x86_64, i686, s390x]
+        arch: [x86_64, i686]
 
     name: ${{ matrix.arch }}-linux-gnu - OTP ${{ matrix.otp_version }}
 
