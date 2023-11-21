@@ -234,13 +234,11 @@ int make(ErlNifEnv *env, const std::vector<uint32_t>& array, ERL_NIF_TERM &out) 
     return make_u32_list_from_c_array(env, count, data, out);
 }
 
-#ifndef OS_WIN
 int make(ErlNifEnv *env, const std::vector<unsigned long long>& array, ERL_NIF_TERM &out) {
     size_t count = array.size();
     uint64_t * data = (uint64_t *)array.data();
     return make_u64_list_from_c_array(env, count, data, out);
 }
-#endif
 
 int make(ErlNifEnv *env, const std::vector<int8_t>& array, ERL_NIF_TERM &out) {
     size_t count = array.size();
@@ -266,12 +264,12 @@ int make(ErlNifEnv *env, const std::vector<long long>& array, ERL_NIF_TERM &out)
     return make_i64_list_from_c_array(env, count, data, out);
 }
 
-int make(ErlNifEnv *env, const std::vector<size_t>& array, ERL_NIF_TERM &out) {
+int make(ErlNifEnv *env, const std::vector<unsigned long int>& array, ERL_NIF_TERM &out) {
     size_t count = array.size();
-    if (sizeof(size_t) == 8) {
+    if (sizeof(unsigned long int) == 8) {
         uint64_t * data = (uint64_t *)array.data();
         return make_u64_list_from_c_array(env, count, data, out);
-    } else if (sizeof(size_t) == 4) {
+    } else if (sizeof(unsigned long int) == 4) {
         uint32_t * data = (uint32_t *)array.data();
         return make_u32_list_from_c_array(env, count, data, out);
     } else {

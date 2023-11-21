@@ -51,3 +51,7 @@ $(NIF_SO):
 		cmake --build . $(CMAKE_BUILD_PARAMETER) && \
 		cmake --install . $(CMAKE_BUILD_PARAMETER) \
 	)
+
+cleanup:
+	@ powershell -command "if (Test-Path \"$(NIF_SO)\" -PathType Leaf) { Remove-Item \"$(NIF_SO)\" }"
+	@ powershell -command "if (Test-Path \"$(CMAKE_HNSWLIB_BUILD_DIR)\" ) { Remove-Item \"$(CMAKE_HNSWLIB_BUILD_DIR)\" -Recurse -Force }

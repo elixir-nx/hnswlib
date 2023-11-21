@@ -10,9 +10,6 @@
 #include <cstring>
 #include <vector>
 
-#if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
-#define OS_WIN
-#endif
 
 namespace erlang {
 namespace nif {
@@ -166,14 +163,12 @@ int make(ErlNifEnv *env, const char *string, ERL_NIF_TERM &out);
 int make(ErlNifEnv *env, const std::vector<uint8_t>& array, ERL_NIF_TERM &out);
 int make(ErlNifEnv *env, const std::vector<uint16_t>& array, ERL_NIF_TERM &out);
 int make(ErlNifEnv *env, const std::vector<uint32_t>& array, ERL_NIF_TERM &out);
-#ifndef OS_WIN
 int make(ErlNifEnv *env, const std::vector<unsigned long long>& array, ERL_NIF_TERM &out);
-#endif
 int make(ErlNifEnv *env, const std::vector<int8_t>& array, ERL_NIF_TERM &out);
 int make(ErlNifEnv *env, const std::vector<int16_t>& array, ERL_NIF_TERM &out);
 int make(ErlNifEnv *env, const std::vector<int32_t>& array, ERL_NIF_TERM &out);
 int make(ErlNifEnv *env, const std::vector<long long>& array, ERL_NIF_TERM &out);
-int make(ErlNifEnv *env, const std::vector<size_t>& array, ERL_NIF_TERM &out);
+int make(ErlNifEnv *env, const std::vector<unsigned long int>& array, ERL_NIF_TERM &out);
 int make(ErlNifEnv *env, const std::vector<float>& array, ERL_NIF_TERM &out);
 int make(ErlNifEnv *env, const std::vector<double>& array, ERL_NIF_TERM &out);
 int make(ErlNifEnv *env, const std::vector<std::string>& array, ERL_NIF_TERM &out);

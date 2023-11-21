@@ -51,3 +51,7 @@ $(NIF_SO):
 				cp "$(CMAKE_HNSWLIB_BUILD_DIR)/hnswlib_nif.so" "$(NIF_SO)" ; \
 			fi ; \
 		fi
+
+cleanup:
+	@ rm -rf "$(CMAKE_HNSWLIB_BUILD_DIR)"
+	@ rm -rf "$(NIF_SO)"
