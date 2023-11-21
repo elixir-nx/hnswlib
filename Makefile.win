@@ -53,9 +53,5 @@ $(NIF_SO):
 	)
 
 cleanup:
-	@ if exist "$(NIF_SO)" ( \
-		del /f "$(NIF_SO)" \
-	)
-	@ if exist "$(CMAKE_HNSWLIB_BUILD_DIR)" ( \
-		rd  /S /Q "$(CMAKE_HNSWLIB_BUILD_DIR)" \
-	)
+	@ powershell -command "if (Test-Path \"$(NIF_SO)\" -PathType Leaf) { Remove-Item \"$(NIF_SO)\" }"
+	@ powershell -command "if (Test-Path \"$(CMAKE_HNSWLIB_BUILD_DIR)\" ) { Remove-Item \"$(CMAKE_HNSWLIB_BUILD_DIR)\" -Recurse -Force }
