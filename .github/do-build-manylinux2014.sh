@@ -7,6 +7,7 @@ OTP_VERSION=$2
 ELIXIR_VERSION=$3
 OPENSSL_VERSION=$4
 ARCH=$5
+HNSWLIB_CI_PRECOMPILE=$6
 
 OTP_MAJOR_VERSION=$(cut -d "." -f 1 <<< "$OTP_VERSION")
 OPENSSL_VERSION=${OPENSSL_VERSION:-3.1.1}
@@ -35,7 +36,7 @@ yum install -y openssl-devel ncurses-devel && \
 cd /work
 export MIX_ENV="${MIX_ENV}"
 export ELIXIR_MAKE_CACHE_DIR=$(pwd)/cache
-export BUILD_WITH_MANYLINUX="true"
+export HNSWLIB_CI_PRECOMPILE="${HNSWLIB_CI_PRECOMPILE}"
 
 mkdir -p "${ELIXIR_MAKE_CACHE_DIR}"
 mix elixir_make.precompile

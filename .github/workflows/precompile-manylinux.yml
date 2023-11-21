@@ -43,7 +43,7 @@ jobs:
           cp .github/script-to-build-manylinux2014.sh ./
           cp .github/do-build-manylinux2014.sh ./
 
-          bash ./script-to-build-manylinux2014.sh "${{ env.MIX_ENV }}" "${{ matrix.otp_version }}" "${{ env.ELIXIR_VERSION }}" "${{ env.OPENSSL_VERSION }}" "${{ matrix.arch }}"
+          bash ./script-to-build-manylinux2014.sh "${{ env.MIX_ENV }}" "${{ matrix.otp_version }}" "${{ env.ELIXIR_VERSION }}" "${{ env.OPENSSL_VERSION }}" "${{ matrix.arch }}" "${{ env.HNSWLIB_CI_PRECOMPILE }}"
 
       - uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
