@@ -19,10 +19,11 @@ jobs:
       MIX_ENV: prod
       OPENSSL_VERSION: "3.1.1"
       ELIXIR_VERSION: "v1.15.4"
+      HNSWLIB_CI_PRECOMPILE: "manylinux2014"
     strategy:
       matrix:
         otp_version: ["25.3.2.6", "26.0.2"]
-        arch: [x86_64, i686]
+        arch: [x86_64, i686, s390x]
 
     name: ${{ matrix.arch }}-linux-gnu - OTP ${{ matrix.otp_version }}
 
