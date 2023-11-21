@@ -96,7 +96,7 @@ int get(ErlNifEnv *env, ERL_NIF_TERM term, unsigned long long *var) {
     return enif_get_uint64(env, term, reinterpret_cast<ErlNifUInt64 *>(var));
 }
 
-int get(ErlNifEnv *env, ERL_Nfint make(ErlNifEnv *env, const std::vector<size_t>& array, ERL_NIF_TERM &out)IF_TERM term, long *var) {
+int get(ErlNifEnv *env, ERL_NIF_TERM term, long *var) {
     return enif_get_int64(env, term, reinterpret_cast<ErlNifSInt64 *>(var));
 }
 
