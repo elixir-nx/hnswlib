@@ -1,7 +1,7 @@
 defmodule HNSWLib.MixProject do
   use Mix.Project
 
-  @version "0.1.2"
+  @version "0.1.3"
   @github_url "https://github.com/elixir-nx/hnswlib"
 
   def project do
@@ -20,9 +20,7 @@ defmodule HNSWLib.MixProject do
       make_precompiler_url: "#{@github_url}/releases/download/v#{@version}/@{artefact_filename}",
       make_precompiler_filename: "hnswlib_nif",
       make_precompiler_nif_versions: [versions: ["2.16", "2.17"]],
-      cc_precompiler: [
-        cleanup: "cleanup"
-      ]
+      cc_precompiler: cc_precompiler()
     ]
   end
 
@@ -51,6 +49,20 @@ defmodule HNSWLib.MixProject do
       source_ref: "v#{@version}",
       source_url: @github_url
     ]
+  end
+
+  defp cc_precompiler do
+    extra_options =
+      if System.get_env("HNSWLIB_CI_PRECOMPILE") == "true" do
+        [
+          only_listed_targets: true,
+          exclude_current_target: true
+        ]
+      else
+        []
+      end
+
+    [cleanup: "cleanup"] ++ extra_options
   end
 
   defp package() do
