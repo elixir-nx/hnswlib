@@ -24,7 +24,7 @@ defmodule HNSWLib.Index do
 
     Number of dimensions for each vector.
 
-  - *max_elements*: `non_neg_integer()`.
+  - *max_elements*: `pos_integer()`.
 
     Number of maximum elements.
 
@@ -42,7 +42,7 @@ defmodule HNSWLib.Index do
   - *random_seed*: `non_neg_integer()`.
   - *allow_replace_deleted*: `boolean()`.
   """
-  @spec new(:cosine | :ip | :l2, non_neg_integer(), non_neg_integer(), [
+  @spec new(:cosine | :ip | :l2, non_neg_integer(), pos_integer(), [
           {:m, non_neg_integer()},
           {:ef_construction, non_neg_integer()},
           {:random_seed, non_neg_integer()},
@@ -50,7 +50,7 @@ defmodule HNSWLib.Index do
         ]) :: {:ok, %T{}} | {:error, String.t()}
   def new(space, dim, max_elements, opts \\ [])
       when (space == :l2 or space == :ip or space == :cosine) and is_integer(dim) and dim >= 0 and
-             is_integer(max_elements) and max_elements >= 0 do
+             is_integer(max_elements) and max_elements > 0 do
     m = Helper.get_keyword!(opts, :m, :non_neg_integer, 16)
     ef_construction = Helper.get_keyword!(opts, :ef_construction, :non_neg_integer, 200)
     random_seed = Helper.get_keyword!(opts, :random_seed, :non_neg_integer, 100)

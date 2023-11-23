@@ -2,6 +2,15 @@ defmodule HNSWLib.Index.Test do
   use ExUnit.Case
   doctest HNSWLib.Index
 
+  test "HNSWLib.Index.new should not accept 0 for max_elements" do
+    space = :l2
+    dim = 8
+    max_elements = 0
+    assert_raise FunctionClauseError, "no function clause matching in HNSWLib.Index.new/4", fn ->
+      HNSWLib.Index.new(space, dim, max_elements)
+    end
+  end
+
   test "HNSWLib.Index.new/3 with L2-space" do
     space = :l2
     dim = 8
