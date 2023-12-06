@@ -202,7 +202,7 @@ defmodule HNSWLib.Index do
 
     Path to save the index to.
   """
-  @spec save_index(%T{}, Path.t()) :: {:ok, integer()} | {:error, String.t()}
+  @spec save_index(%T{}, Path.t()) :: :ok
   def save_index(self = %T{}, path) when is_binary(path) do
     HNSWLib.Nif.index_save_index(self.reference, path)
   end
