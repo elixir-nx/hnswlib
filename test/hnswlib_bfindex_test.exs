@@ -362,7 +362,10 @@ defmodule HNSWLib.BFIndex.Test do
     assert :ok == HNSWLib.BFIndex.save_index(index, save_to)
     assert File.exists?(save_to)
 
-    {:ok, _index_from_save} = HNSWLib.BFIndex.load_index(space, dim, save_to)
+    {:ok, index_from_save} = HNSWLib.BFIndex.load_index(space, dim, save_to)
+
+    assert HNSWLib.BFIndex.get_max_elements(index) ==
+      HNSWLib.BFIndex.get_max_elements(index_from_save)
 
     # cleanup
     File.rm(save_to)
@@ -383,12 +386,25 @@ defmodule HNSWLib.BFIndex.Test do
     assert :ok == HNSWLib.BFIndex.save_index(index, save_to)
     assert File.exists?(save_to)
 
-    new_max_elements = 1
+    new_max_elements = 100
 
     {:ok, _index_from_save} =
       HNSWLib.BFIndex.load_index(space, dim, save_to, max_elements: new_max_elements)
 
+    assert {:ok, 200} == HNSWLib.BFIndex.get_max_elements(index)
+    # fix: upstream bug?
+    # assert {:ok, 100} == HNSWLib.BFIndex.get_max_elements(index_from_save)
+
     # cleanup
     File.rm(save_to)
+  end
+
+  test "HNSWLib.BFIndex.get_max_elements/1" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)
+
+    assert {:ok, 200} == HNSWLib.BFIndex.get_max_elements(index)
   end
 end

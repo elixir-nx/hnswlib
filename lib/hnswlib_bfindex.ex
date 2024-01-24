@@ -210,4 +210,12 @@ defmodule HNSWLib.BFIndex do
         {:error, reason}
     end
   end
+
+  @doc """
+  Get the maximum number of elements the index can hold.
+  """
+  @spec get_max_elements(%T{}) :: {:ok, integer()} | {:error, String.t()}
+  def get_max_elements(self = %T{}) do
+    HNSWLib.Nif.bfindex_get_max_elements(self.reference)
+  end
 end

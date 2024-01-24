@@ -74,5 +74,7 @@ defmodule HNSWLib.Nif do
 
   def bfindex_load_index(_space, _dim, _path, _max_elements), do: :erlang.nif_error(:not_loaded)
 
+  def bfindex_get_max_elements(_self), do: :erlang.nif_error(:not_loaded)
+
   def float_size, do: :erlang.nif_error(:not_loaded)
 end
