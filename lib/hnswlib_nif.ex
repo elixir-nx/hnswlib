@@ -41,6 +41,8 @@ defmodule HNSWLib.Nif do
 
   def index_set_num_threads(_self, _new_num_threads), do: :erlang.nif_error(:not_loaded)
 
+  def index_index_file_size(_self), do: :erlang.nif_error(:not_loaded)
+
   def index_save_index(_self, _path), do: :erlang.nif_error(:not_loaded)
 
   def index_load_index(_space, _dim, _path, _max_elements, _allow_replace_deleted),

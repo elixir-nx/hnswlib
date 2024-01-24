@@ -395,6 +395,17 @@ static ERL_NIF_TERM hnswlib_index_set_num_threads(ErlNifEnv *env, int argc, cons
     return erlang::nif::ok(env);
 }
 
+static ERL_NIF_TERM hnswlib_index_index_file_size(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    NifResHNSWLibIndex * index = nullptr;
+    ERL_NIF_TERM ret, error;
+
+    if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
+        return enif_make_badarg(env);
+    }
+
+    return erlang::nif::ok(env, erlang::nif::make(env, (unsigned long long)index->val->indexFileSize()));
+}
+
 static ERL_NIF_TERM hnswlib_index_get_items(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     NifResHNSWLibIndex * index = nullptr;
     ErlNifBinary ids_binary;
@@ -788,6 +799,7 @@ static ErlNifFunc nif_functions[] = {
     {"index_set_ef", 2, hnswlib_index_set_ef, 0},
     {"index_get_num_threads", 1, hnswlib_index_get_num_threads, 0},
     {"index_set_num_threads", 2, hnswlib_index_set_num_threads, 0},
+    {"index_index_file_size", 1, hnswlib_index_index_file_size, 0},
     {"index_save_index", 2, hnswlib_index_save_index, ERL_NIF_DIRTY_JOB_IO_BOUND},
     {"index_load_index", 5, hnswlib_index_load_index, ERL_NIF_DIRTY_JOB_IO_BOUND},
     {"index_mark_deleted", 2, hnswlib_index_mark_deleted, 0},

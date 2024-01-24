@@ -194,6 +194,14 @@ defmodule HNSWLib.Index do
   end
 
   @doc """
+  Get the size the of index file.
+  """
+  @spec index_file_size(%T{}) :: {:ok, non_neg_integer()} | {:error, String.t()}
+  def index_file_size(self = %T{}) do
+    HNSWLib.Nif.index_index_file_size(self.reference)
+  end
+
+  @doc """
   Save current index to disk.
 
   ##### Positional Parameters

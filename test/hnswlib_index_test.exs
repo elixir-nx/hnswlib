@@ -536,6 +536,31 @@ defmodule HNSWLib.Index.Test do
     assert num_threads == 2
   end
 
+  test "HNSWLib.Index.index_file_size/1" do
+    space = :l2
+    dim = 2
+    max_elements = 2
+    {:ok, index} = HNSWLib.Index.new(space, dim, max_elements)
+
+    assert {:ok, 96} == HNSWLib.Index.index_file_size(index)
+
+    max_elements = 400
+    assert :ok == HNSWLib.Index.resize_index(index, max_elements)
+    assert {:ok, 96} == HNSWLib.Index.index_file_size(index)
+
+    items = Nx.tensor([[10, 20], [30, 40]], type: :f32)
+    ids = Nx.tensor([100, 200])
+    :ok = HNSWLib.Index.add_items(index, items, ids: ids)
+    assert {:ok, 400} == HNSWLib.Index.index_file_size(index)
+
+    max_elements = 800
+    assert :ok == HNSWLib.Index.resize_index(index, max_elements)
+    assert {:ok, 400} == HNSWLib.Index.index_file_size(index)
+
+    :ok = HNSWLib.Index.add_items(index, items, ids: ids)
+    assert {:ok, 400} == HNSWLib.Index.index_file_size(index)
+  end
+
   test "HNSWLib.Index.save_index/2" do
     space = :l2
     dim = 2
