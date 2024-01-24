@@ -166,6 +166,14 @@ class Index {
     }
 
 
+    void set_num_threads(int num_threads) {
+        this->num_threads_default = num_threads;
+    }
+
+    size_t indexFileSize() const {
+        return appr_alg->indexFileSize();
+    }
+
     void saveIndex(const std::string &path_to_index) {
         appr_alg->saveIndex(path_to_index);
     }
@@ -424,6 +432,7 @@ class BFIndex {
     int dim;
     bool index_inited;
     bool normalize;
+    int num_threads_default;
 
     hnswlib::labeltype cur_l;
     hnswlib::BruteforceSearch<dist_t>* alg;
@@ -444,6 +453,8 @@ class BFIndex {
         }
         alg = NULL;
         index_inited = false;
+
+        num_threads_default = std::thread::hardware_concurrency();
     }
 
 
@@ -451,6 +462,21 @@ class BFIndex {
         delete space;
         if (alg)
             delete alg;
+    }
+
+
+    size_t getMaxElements() const {
+        return alg->maxelements_;
+    }
+
+
+    size_t getCurrentCount() const {
+        return alg->cur_element_count;
+    }
+
+
+    void set_num_threads(int num_threads) {
+        this->num_threads_default = num_threads;
     }
 
 
