@@ -407,4 +407,25 @@ defmodule HNSWLib.BFIndex.Test do
 
     assert {:ok, 200} == HNSWLib.BFIndex.get_max_elements(index)
   end
+
+  test "HNSWLib.BFIndex.get_current_count/1 when empty" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)
+
+    assert {:ok, 0} == HNSWLib.BFIndex.get_current_count(index)
+  end
+
+  test "HNSWLib.BFIndex.get_current_count/1 before and after" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    items = Nx.tensor([[10, 20], [30, 40]], type: :f32)
+    {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)
+
+    assert {:ok, 0} == HNSWLib.BFIndex.get_current_count(index)
+    assert :ok == HNSWLib.BFIndex.add_items(index, items)
+    assert {:ok, 2} == HNSWLib.BFIndex.get_current_count(index)
+  end
 end

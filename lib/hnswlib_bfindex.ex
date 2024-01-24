@@ -218,4 +218,12 @@ defmodule HNSWLib.BFIndex do
   def get_max_elements(self = %T{}) do
     HNSWLib.Nif.bfindex_get_max_elements(self.reference)
   end
+
+  @doc """
+  Get the current number of elements in the index.
+  """
+  @spec get_current_count(%T{}) :: {:ok, integer()} | {:error, String.t()}
+  def get_current_count(self = %T{}) do
+    HNSWLib.Nif.bfindex_get_current_count(self.reference)
+  end
 end

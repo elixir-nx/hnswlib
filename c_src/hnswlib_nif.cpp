@@ -712,6 +712,18 @@ static ERL_NIF_TERM hnswlib_bfindex_get_max_elements(ErlNifEnv *env, int argc, c
     return erlang::nif::ok(env, erlang::nif::make(env, (unsigned long long)max_elements));
 }
 
+static ERL_NIF_TERM hnswlib_bfindex_get_current_count(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    NifResHNSWLibBFIndex * index = nullptr;
+    ERL_NIF_TERM ret, error;
+
+    if ((index = NifResHNSWLibBFIndex::get_resource(env, argv[0], error)) == nullptr) {
+        return enif_make_badarg(env);
+    }
+
+    size_t count = index->val->getCurrentCount();
+    return erlang::nif::ok(env, erlang::nif::make(env, (unsigned long long)count));
+}
+
 static ERL_NIF_TERM hnswlib_float_size(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     return enif_make_uint(env, sizeof(float));
 }
@@ -765,6 +777,7 @@ static ErlNifFunc nif_functions[] = {
     {"bfindex_save_index", 2, hnswlib_bfindex_save_index, ERL_NIF_DIRTY_JOB_IO_BOUND},
     {"bfindex_load_index", 4, hnswlib_bfindex_load_index, ERL_NIF_DIRTY_JOB_IO_BOUND},
     {"bfindex_get_max_elements", 1, hnswlib_bfindex_get_max_elements, 0},
+    {"bfindex_get_current_count", 1, hnswlib_bfindex_get_current_count, 0},
 
     {"float_size", 0, hnswlib_float_size, 0}
 };
