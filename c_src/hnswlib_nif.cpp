@@ -387,7 +387,7 @@ static ERL_NIF_TERM hnswlib_index_set_num_threads(ErlNifEnv *env, int argc, cons
     if ((index = NifResHNSWLibIndex::get_resource(env, argv[0], error)) == nullptr) {
         return enif_make_badarg(env);
     }
-    if (!erlang::nif::get(env, argv[1], &new_num_threads)) {
+    if (!erlang::nif::get(env, argv[1], &new_num_threads) || new_num_threads <= 0) {
         return enif_make_badarg(env);
     }
     index->val->num_threads_default = new_num_threads;
@@ -631,6 +631,23 @@ static ERL_NIF_TERM hnswlib_bfindex_delete_vector(ErlNifEnv *env, int argc, cons
     return erlang::nif::ok(env);
 }
 
+static ERL_NIF_TERM hnswlib_bfindex_set_num_threads(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    NifResHNSWLibBFIndex * index = nullptr;
+    int new_num_threads;
+    ERL_NIF_TERM ret, error;
+
+    if ((index = NifResHNSWLibBFIndex::get_resource(env, argv[0], error)) == nullptr) {
+        return enif_make_badarg(env);
+    }
+    if (!erlang::nif::get(env, argv[1], &new_num_threads) || new_num_threads <= 0) {
+        return enif_make_badarg(env);
+    }
+
+    index->val->set_num_threads(new_num_threads);
+
+    return erlang::nif::ok(env);
+}
+
 static ERL_NIF_TERM hnswlib_bfindex_save_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     NifResHNSWLibBFIndex * index = nullptr;
     std::string path;
@@ -724,6 +741,17 @@ static ERL_NIF_TERM hnswlib_bfindex_get_current_count(ErlNifEnv *env, int argc, 
     return erlang::nif::ok(env, erlang::nif::make(env, (unsigned long long)count));
 }
 
+static ERL_NIF_TERM hnswlib_bfindex_get_num_threads(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+    NifResHNSWLibBFIndex * index = nullptr;
+    ERL_NIF_TERM ret, error;
+
+    if ((index = NifResHNSWLibBFIndex::get_resource(env, argv[0], error)) == nullptr) {
+        return enif_make_badarg(env);
+    }
+
+    return erlang::nif::ok(env, erlang::nif::make(env, (unsigned long long)index->val->num_threads_default));
+}
+
 static ERL_NIF_TERM hnswlib_float_size(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
     return enif_make_uint(env, sizeof(float));
 }
@@ -774,10 +802,12 @@ static ErlNifFunc nif_functions[] = {
     {"bfindex_knn_query", 6, hnswlib_bfindex_knn_query, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"bfindex_add_items", 5, hnswlib_bfindex_add_items, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"bfindex_delete_vector", 2, hnswlib_bfindex_delete_vector, 0},
+    {"bfindex_set_num_threads", 2, hnswlib_bfindex_set_num_threads, 0},
     {"bfindex_save_index", 2, hnswlib_bfindex_save_index, ERL_NIF_DIRTY_JOB_IO_BOUND},
     {"bfindex_load_index", 4, hnswlib_bfindex_load_index, ERL_NIF_DIRTY_JOB_IO_BOUND},
     {"bfindex_get_max_elements", 1, hnswlib_bfindex_get_max_elements, 0},
     {"bfindex_get_current_count", 1, hnswlib_bfindex_get_current_count, 0},
+    {"bfindex_get_num_threads", 1, hnswlib_bfindex_get_num_threads, 0},
 
     {"float_size", 0, hnswlib_float_size, 0}
 };

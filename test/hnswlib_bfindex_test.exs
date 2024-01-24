@@ -428,4 +428,27 @@ defmodule HNSWLib.BFIndex.Test do
     assert :ok == HNSWLib.BFIndex.add_items(index, items)
     assert {:ok, 2} == HNSWLib.BFIndex.get_current_count(index)
   end
+
+  test "HNSWLib.BFIndex.get_num_threads/1 default case" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)
+
+    {:ok, cur_num_threads} = HNSWLib.BFIndex.get_num_threads(index)
+    assert System.schedulers() == cur_num_threads
+  end
+
+  test "HNSWLib.BFIndex.get_num_threads/1 before and after HNSWLib.BFIndex.set_num_threads/2" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)
+
+    {:ok, cur_num_threads} = HNSWLib.BFIndex.get_num_threads(index)
+    assert System.schedulers() == cur_num_threads
+    assert :ok == HNSWLib.BFIndex.set_num_threads(index, cur_num_threads + 1)
+    {:ok, updated_num_threads} = HNSWLib.BFIndex.get_num_threads(index)
+    assert updated_num_threads == cur_num_threads + 1
+  end
 end
