@@ -41,6 +41,8 @@ defmodule HNSWLib.Nif do
 
   def index_set_num_threads(_self, _new_num_threads), do: :erlang.nif_error(:not_loaded)
 
+  def index_index_file_size(_self), do: :erlang.nif_error(:not_loaded)
+
   def index_save_index(_self, _path), do: :erlang.nif_error(:not_loaded)
 
   def index_load_index(_space, _dim, _path, _max_elements, _allow_replace_deleted),
@@ -70,9 +72,16 @@ defmodule HNSWLib.Nif do
 
   def bfindex_delete_vector(_self, _label), do: :erlang.nif_error(:not_loaded)
 
+  def bfindex_set_num_threads(_self, _num_threads), do: :erlang.nif_error(:not_loaded)
+
   def bfindex_save_index(_self, _path), do: :erlang.nif_error(:not_loaded)
 
   def bfindex_load_index(_space, _dim, _path, _max_elements), do: :erlang.nif_error(:not_loaded)
 
+  def bfindex_get_max_elements(_self), do: :erlang.nif_error(:not_loaded)
+
+  def bfindex_get_current_count(_self), do: :erlang.nif_error(:not_loaded)
+
+  def bfindex_get_num_threads(_self), do: :erlang.nif_error(:not_loaded)
   def float_size, do: :erlang.nif_error(:not_loaded)
 end

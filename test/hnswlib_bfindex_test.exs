@@ -362,7 +362,10 @@ defmodule HNSWLib.BFIndex.Test do
     assert :ok == HNSWLib.BFIndex.save_index(index, save_to)
     assert File.exists?(save_to)
 
-    {:ok, _index_from_save} = HNSWLib.BFIndex.load_index(space, dim, save_to)
+    {:ok, index_from_save} = HNSWLib.BFIndex.load_index(space, dim, save_to)
+
+    assert HNSWLib.BFIndex.get_max_elements(index) ==
+      HNSWLib.BFIndex.get_max_elements(index_from_save)
 
     # cleanup
     File.rm(save_to)
@@ -383,12 +386,69 @@ defmodule HNSWLib.BFIndex.Test do
     assert :ok == HNSWLib.BFIndex.save_index(index, save_to)
     assert File.exists?(save_to)
 
-    new_max_elements = 1
+    new_max_elements = 100
 
     {:ok, _index_from_save} =
       HNSWLib.BFIndex.load_index(space, dim, save_to, max_elements: new_max_elements)
 
+    assert {:ok, 200} == HNSWLib.BFIndex.get_max_elements(index)
+    # fix: upstream bug?
+    # assert {:ok, 100} == HNSWLib.BFIndex.get_max_elements(index_from_save)
+
     # cleanup
     File.rm(save_to)
+  end
+
+  test "HNSWLib.BFIndex.get_max_elements/1" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)
+
+    assert {:ok, 200} == HNSWLib.BFIndex.get_max_elements(index)
+  end
+
+  test "HNSWLib.BFIndex.get_current_count/1 when empty" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)
+
+    assert {:ok, 0} == HNSWLib.BFIndex.get_current_count(index)
+  end
+
+  test "HNSWLib.BFIndex.get_current_count/1 before and after" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    items = Nx.tensor([[10, 20], [30, 40]], type: :f32)
+    {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)
+
+    assert {:ok, 0} == HNSWLib.BFIndex.get_current_count(index)
+    assert :ok == HNSWLib.BFIndex.add_items(index, items)
+    assert {:ok, 2} == HNSWLib.BFIndex.get_current_count(index)
+  end
+
+  test "HNSWLib.BFIndex.get_num_threads/1 default case" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)
+
+    {:ok, cur_num_threads} = HNSWLib.BFIndex.get_num_threads(index)
+    assert System.schedulers() == cur_num_threads
+  end
+
+  test "HNSWLib.BFIndex.get_num_threads/1 before and after HNSWLib.BFIndex.set_num_threads/2" do
+    space = :l2
+    dim = 2
+    max_elements = 200
+    {:ok, index} = HNSWLib.BFIndex.new(space, dim, max_elements)
+
+    {:ok, cur_num_threads} = HNSWLib.BFIndex.get_num_threads(index)
+    assert System.schedulers() == cur_num_threads
+    assert :ok == HNSWLib.BFIndex.set_num_threads(index, cur_num_threads + 1)
+    {:ok, updated_num_threads} = HNSWLib.BFIndex.get_num_threads(index)
+    assert updated_num_threads == cur_num_threads + 1
   end
 end

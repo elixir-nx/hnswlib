@@ -146,6 +146,14 @@ defmodule HNSWLib.BFIndex do
   end
 
   @doc """
+  Get the current number of threads to use in the index.
+  """
+  @spec set_num_threads(%T{}, pos_integer()) :: {:ok, integer()} | {:error, String.t()}
+  def set_num_threads(self = %T{}, num_threads) when is_integer(num_threads) and num_threads > 0 do
+    HNSWLib.Nif.bfindex_set_num_threads(self.reference, num_threads)
+  end
+
+  @doc """
   Save current index to disk.
 
   ##### Positional Parameters
@@ -209,5 +217,29 @@ defmodule HNSWLib.BFIndex do
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  @doc """
+  Get the maximum number of elements the index can hold.
+  """
+  @spec get_max_elements(%T{}) :: {:ok, integer()} | {:error, String.t()}
+  def get_max_elements(self = %T{}) do
+    HNSWLib.Nif.bfindex_get_max_elements(self.reference)
+  end
+
+  @doc """
+  Get the current number of elements in the index.
+  """
+  @spec get_current_count(%T{}) :: {:ok, integer()} | {:error, String.t()}
+  def get_current_count(self = %T{}) do
+    HNSWLib.Nif.bfindex_get_current_count(self.reference)
+  end
+
+  @doc """
+  Get the current number of threads to use in the index.
+  """
+  @spec get_num_threads(%T{}) :: {:ok, integer()} | {:error, String.t()}
+  def get_num_threads(self = %T{}) do
+    HNSWLib.Nif.bfindex_get_num_threads(self.reference)
   end
 end
