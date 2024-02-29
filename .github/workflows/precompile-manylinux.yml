@@ -17,18 +17,18 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MIX_ENV: prod
-      OPENSSL_VERSION: "3.1.1"
+      OPENSSL_VERSION: "3.2.1"
       ELIXIR_VERSION: "v1.15.4"
       HNSWLIB_CI_PRECOMPILE: "manylinux2014"
     strategy:
       matrix:
-        otp_version: ["25.3.2.6", "26.0.2"]
+        otp_version: ["25.3.2.9", "26.2.2"]
         arch: [x86_64, i686, s390x]
 
     name: ${{ matrix.arch }}-linux-gnu - OTP ${{ matrix.otp_version }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Pull docker image
         run: |
