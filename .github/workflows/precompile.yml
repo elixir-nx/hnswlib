@@ -25,7 +25,8 @@ jobs:
     name: Linux GNU - OTP ${{ matrix.otp_version }}
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - uses: erlef/setup-beam@v1
         with:
@@ -136,7 +137,7 @@ jobs:
     name: Windows - OTP ${{ matrix.otp_version }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: erlef/setup-beam@v1
         with:
