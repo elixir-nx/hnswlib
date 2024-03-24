@@ -34,7 +34,7 @@ defmodule HNSWLib.MixProject do
     [
       # compilation
       {:cc_precompiler, "~> 0.1.0"},
-      {:elixir_make, "~> 0.7.0"},
+      {:elixir_make, "~> 0.8.0"},
 
       # runtime
       {:nx, "~> 0.5"},
