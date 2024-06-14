@@ -65,7 +65,7 @@ defmodule HNSWLib.BFIndex do
   """
   @spec knn_query(%T{}, Nx.Tensor.t() | binary() | [binary()], [
           {:k, pos_integer()}
-        ]) :: :ok | {:error, String.t()}
+        ]) :: {:ok, Nx.Tensor.t(), Nx.Tensor.t()} | {:error, String.t()}
   def knn_query(self, query, opts \\ [])
 
   def knn_query(self = %T{}, query, opts) when is_binary(query) do
@@ -148,8 +148,9 @@ defmodule HNSWLib.BFIndex do
   @doc """
   Get the current number of threads to use in the index.
   """
-  @spec set_num_threads(%T{}, pos_integer()) :: {:ok, integer()} | {:error, String.t()}
-  def set_num_threads(self = %T{}, num_threads) when is_integer(num_threads) and num_threads > 0 do
+  @spec set_num_threads(%T{}, pos_integer()) :: :ok | {:error, String.t()}
+  def set_num_threads(self = %T{}, num_threads)
+      when is_integer(num_threads) and num_threads > 0 do
     HNSWLib.Nif.bfindex_set_num_threads(self.reference, num_threads)
   end
 
@@ -162,7 +163,7 @@ defmodule HNSWLib.BFIndex do
 
     Path to save the index to.
   """
-  @spec save_index(%T{}, Path.t()) :: {:ok, integer()} | {:error, String.t()}
+  @spec save_index(%T{}, Path.t()) :: :ok | {:error, String.t()}
   def save_index(self = %T{}, path) when is_binary(path) do
     HNSWLib.Nif.bfindex_save_index(self.reference, path)
   end

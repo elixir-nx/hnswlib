@@ -188,7 +188,7 @@ defmodule HNSWLib.Index do
   @doc """
   Set the number of threads to use.
   """
-  @spec set_num_threads(%T{}, integer()) :: {:ok, integer()} | {:error, String.t()}
+  @spec set_num_threads(%T{}, integer()) :: :ok | {:error, String.t()}
   def set_num_threads(self = %T{}, new_num_threads) do
     HNSWLib.Nif.index_set_num_threads(self.reference, new_num_threads)
   end
@@ -210,7 +210,7 @@ defmodule HNSWLib.Index do
 
     Path to save the index to.
   """
-  @spec save_index(%T{}, Path.t()) :: :ok
+  @spec save_index(%T{}, Path.t()) :: :ok | {:error, String.t()}
   def save_index(self = %T{}, path) when is_binary(path) do
     HNSWLib.Nif.index_save_index(self.reference, path)
   end
