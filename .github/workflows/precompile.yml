@@ -103,6 +103,7 @@ jobs:
     runs-on: windows-2022
     env:
       MIX_ENV: prod
+      ImageOS: win22
     strategy:
       matrix:
         otp_version: [25, 26]
