@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   linux:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       MIX_ENV: test
 
@@ -34,9 +34,10 @@ jobs:
           mix test
 
   windows:
-    runs-on: windows-latest
+    runs-on: windows-2022
     env:
       MIX_ENV: test
+      ImageOS: win22
     steps:
       - uses: actions/checkout@v4
 
@@ -57,7 +58,7 @@ jobs:
           mix test
 
   macos:
-    runs-on: macos-13
+    runs-on: macos-15
     env:
       MIX_ENV: test
       ELIXIR_VERSION: "1.16.0"
