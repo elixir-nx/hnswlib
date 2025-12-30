@@ -100,7 +100,7 @@ jobs:
             cache/*.sha256
 
   windows:
-    runs-on: windows-latest
+    runs-on: windows-2022
     env:
       MIX_ENV: prod
     strategy:

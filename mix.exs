@@ -1,7 +1,7 @@
 defmodule HNSWLib.MixProject do
   use Mix.Project
 
-  @version "0.1.6-dev"
+  @version "0.1.6"
   @github_url "https://github.com/elixir-nx/hnswlib"
 
   def project do
