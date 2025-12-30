@@ -1,0 +1,180 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Extract and validate version
+        id: version
+        run: |
+          # Extract version from mix.exs
+          DEV_VERSION=$(grep '@version "' mix.exs | sed 's/.*@version "\([^"]*\)".*/\1/')
+          echo "Dev version: $DEV_VERSION"
+
+          # Validate it ends with -dev
+          if [[ ! "$DEV_VERSION" =~ -dev$ ]]; then
+            echo "Error: Version '$DEV_VERSION' does not end with -dev"
+            echo "Make sure mix.exs has a version like '0.1.7-dev' before releasing"
+            exit 1
+          fi
+
+          # Strip -dev suffix for release version
+          RELEASE_VERSION="${DEV_VERSION%-dev}"
+          echo "Release version: $RELEASE_VERSION"
+
+          # Calculate next dev version (increment patch)
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$RELEASE_VERSION"
+          NEXT_PATCH=$((PATCH + 1))
+          NEXT_DEV_VERSION="$MAJOR.$MINOR.$NEXT_PATCH-dev"
+          echo "Next dev version: $NEXT_DEV_VERSION"
+
+          echo "dev_version=$DEV_VERSION" >> $GITHUB_OUTPUT
+          echo "release_version=$RELEASE_VERSION" >> $GITHUB_OUTPUT
+          echo "next_dev_version=$NEXT_DEV_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update version for release
+        env:
+          DEV_VERSION: ${{ steps.version.outputs.dev_version }}
+          RELEASE_VERSION: ${{ steps.version.outputs.release_version }}
+        run: |
+          sed -i "s/@version \"$DEV_VERSION\"/@version \"$RELEASE_VERSION\"/" mix.exs
+          grep '@version' mix.exs
+
+      - name: Commit release version
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.release_version }}
+        run: |
+          git add mix.exs
+          git commit -m "Bump version to $RELEASE_VERSION"
+          git push origin main
+
+      - name: Wait for tests to pass
+        run: |
+          echo "Waiting for Test workflow to start..."
+          sleep 30
+
+          # Wait for the Test workflow to complete
+          for i in {1..60}; do
+            STATUS=$(gh run list --workflow=ci.yml --branch=main --limit=1 --json status,conclusion --jq '.[0]')
+            RUN_STATUS=$(echo "$STATUS" | jq -r '.status')
+            CONCLUSION=$(echo "$STATUS" | jq -r '.conclusion')
+
+            echo "Attempt $i: status=$RUN_STATUS, conclusion=$CONCLUSION"
+
+            if [[ "$RUN_STATUS" == "completed" ]]; then
+              if [[ "$CONCLUSION" == "success" ]]; then
+                echo "Tests passed!"
+                break
+              else
+                echo "Tests failed with conclusion: $CONCLUSION"
+                exit 1
+              fi
+            fi
+
+            sleep 30
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and push tag
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.release_version }}
+        run: |
+          git tag -a "v$RELEASE_VERSION" -m "Release v$RELEASE_VERSION"
+          git push origin "v$RELEASE_VERSION"
+
+      - name: Wait for precompile workflow to complete
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: ${{ steps.version.outputs.release_version }}
+        run: |
+          echo "Waiting for precompile workflow to start..."
+          sleep 30
+
+          TAG="v$RELEASE_VERSION"
+
+          # Wait for precompile workflow to complete
+          for i in {1..120}; do
+            STATUS=$(gh run list --workflow=precompile.yml --limit=5 --json status,conclusion,headBranch --jq ".[] | select(.headBranch == \"$TAG\")")
+
+            if [[ -z "$STATUS" ]]; then
+              echo "Attempt $i: Waiting for workflow to appear..."
+              sleep 30
+              continue
+            fi
+
+            RUN_STATUS=$(echo "$STATUS" | jq -r '.status')
+            CONCLUSION=$(echo "$STATUS" | jq -r '.conclusion')
+
+            echo "Attempt $i: status=$RUN_STATUS, conclusion=$CONCLUSION"
+
+            if [[ "$RUN_STATUS" == "completed" ]]; then
+              if [[ "$CONCLUSION" == "success" ]]; then
+                echo "Precompile completed successfully!"
+                break
+              else
+                echo "Precompile failed with conclusion: $CONCLUSION"
+                exit 1
+              fi
+            fi
+
+            sleep 30
+          done
+
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: 26
+          elixir-version: 1.16
+
+      - name: Generate checksum.exs
+        run: |
+          mix deps.get
+          mix elixir_make.checksum --all --ignore-unavailable
+
+      - name: Commit checksum.exs
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.release_version }}
+        run: |
+          git add checksum.exs
+          git commit -m "Add checksum.exs for v$RELEASE_VERSION"
+          git push origin main
+
+      - name: Publish to Hex
+        env:
+          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+          RELEASE_VERSION: ${{ steps.version.outputs.release_version }}
+        run: |
+          # Checkout the tag to publish the correct version
+          git checkout "v$RELEASE_VERSION"
+          mix deps.get
+          mix hex.publish --yes
+
+      - name: Bump to next dev version
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.release_version }}
+          NEXT_DEV_VERSION: ${{ steps.version.outputs.next_dev_version }}
+        run: |
+          git checkout main
+          git pull origin main
+          sed -i "s/@version \"$RELEASE_VERSION\"/@version \"$NEXT_DEV_VERSION\"/" mix.exs
+          grep '@version' mix.exs
+          git add mix.exs
+          git commit -m "Bump version to $NEXT_DEV_VERSION"
+          git push origin main
