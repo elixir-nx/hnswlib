@@ -1,7 +1,7 @@
 defmodule HNSWLib.MixProject do
   use Mix.Project
 
-  @version "0.1.6"
+  @version "0.1.7-dev"
   @github_url "https://github.com/elixir-nx/hnswlib"
 
   def project do
@@ -40,7 +40,7 @@ defmodule HNSWLib.MixProject do
       {:nx, "~> 0.5"},
 
       # docs
-      {:ex_doc, "~> 0.29", only: :docs, runtime: false}
+      {:ex_doc, "~> 0.29", only: :dev, runtime: false}
     ]
   end
 
