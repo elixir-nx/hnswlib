@@ -4,8 +4,25 @@
 
 - Hex.pm account with publish access to `hnswlib`
 - All tests passing on main
+- `HEX_API_KEY` secret configured in GitHub repository settings (for automated release)
 
-## Steps
+## Automated Release (Recommended)
+
+1. Ensure `mix.exs` has a version ending with `-dev` (e.g., `0.1.7-dev`)
+2. Go to [Actions > Release](https://github.com/elixir-nx/hnswlib/actions/workflows/release.yml)
+3. Click "Run workflow"
+4. The workflow will automatically:
+   - Update version to release (strip `-dev`)
+   - Wait for tests to pass
+   - Create and push tag
+   - Wait for precompile to build all binaries
+   - Generate `checksum.exs`
+   - Publish to Hex
+   - Bump to next `-dev` version
+
+## Manual Release
+
+### Steps
 
 ### 1. Update version for release
 
