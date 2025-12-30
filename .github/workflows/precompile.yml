@@ -19,6 +19,7 @@ jobs:
       MIX_ENV: prod
       HNSWLIB_CI_PRECOMPILE: "true"
     strategy:
+      fail-fast: false
       matrix:
         otp_version: [25, 26]
 
@@ -49,10 +50,11 @@ jobs:
           mix deps.get
           mix elixir_make.precompile
 
-      - uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
         with:
-          files: |
+          name: linux-otp-${{ matrix.otp_version }}
+          path: |
             cache/*.tar.gz
             cache/*.sha256
 
@@ -63,6 +65,7 @@ jobs:
       ELIXIR_VERSION: "1.16.0"
       OTP_VERSION: ${{ matrix.otp_version }}
     strategy:
+      fail-fast: false
       matrix:
         otp_version: ["25.3.2.8", "26.2.2"]
 
@@ -77,7 +80,7 @@ jobs:
           curl -fsSO https://elixir-lang.org/install.sh
           sh install.sh "elixir@${ELIXIR_VERSION}" "otp@${OTP_VERSION}"
 
-      - name: Compile and Test
+      - name: Precompile
         run: |
           export OTP_MAIN_VER="${OTP_VERSION%%.*}"
           export PATH=$HOME/.elixir-install/installs/otp/${OTP_VERSION}/bin:$PATH
@@ -92,10 +95,11 @@ jobs:
           mix deps.get
           mix elixir_make.precompile
 
-      - uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
         with:
-          files: |
+          name: macos-otp-${{ matrix.otp_version }}
+          path: |
             cache/*.tar.gz
             cache/*.sha256
 
@@ -105,6 +109,7 @@ jobs:
       MIX_ENV: prod
       ImageOS: win22
     strategy:
+      fail-fast: false
       matrix:
         otp_version: [25, 26]
 
@@ -130,9 +135,74 @@ jobs:
           mix deps.get
           mix elixir_make.precompile
 
-      - uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
         with:
-          files: |
+          name: windows-otp-${{ matrix.otp_version }}
+          path: |
             cache/*.tar.gz
             cache/*.sha256
+
+  manylinux:
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: prod
+      OPENSSL_VERSION: "3.2.1"
+      ELIXIR_VERSION: "v1.15.4"
+      HNSWLIB_CI_PRECOMPILE: "manylinux2014"
+    strategy:
+      fail-fast: false
+      matrix:
+        otp_version: ["25.3.2.9", "26.2.2"]
+        arch: [x86_64, i686, s390x]
+
+    name: ${{ matrix.arch }}-linux-gnu - OTP ${{ matrix.otp_version }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pull docker image
+        run: |
+          sudo docker pull quay.io/pypa/manylinux2014_${{ matrix.arch }}:latest
+
+      - name: Install binfmt
+        run: |
+          sudo apt install -y binfmt-support qemu-user-static
+
+      - name: Precompile
+        run: |
+          cp .github/script-to-build-manylinux2014.sh ./
+          cp .github/do-build-manylinux2014.sh ./
+
+          bash ./script-to-build-manylinux2014.sh "${{ env.MIX_ENV }}" "${{ matrix.otp_version }}" "${{ env.ELIXIR_VERSION }}" "${{ env.OPENSSL_VERSION }}" "${{ matrix.arch }}" "${{ env.HNSWLIB_CI_PRECOMPILE }}"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: manylinux-${{ matrix.arch }}-otp-${{ matrix.otp_version }}
+          path: |
+            cache/*.tar.gz
+            cache/*.sha256
+
+  release:
+    needs: [linux, macos, windows, manylinux]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Flatten artifacts
+        run: |
+          mkdir -p release
+          find artifacts -type f \( -name "*.tar.gz" -o -name "*.sha256" \) -exec cp {} release/ \;
+          ls -la release/
+
+      - name: Create release and upload
+        run: |
+          gh release create ${{ github.ref_name }} release/* --repo ${{ github.repository }} --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
