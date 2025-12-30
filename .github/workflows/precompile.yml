@@ -1,9 +1,11 @@
 name: precompile
 
 on:
+  workflow_run:
+    workflows: [Test]
+    types: [completed]
+    branches: [main]
   push:
-    branches:
-      - main
     tags:
       - 'v*'
 
@@ -16,6 +18,7 @@ permissions:
 
 jobs:
   linux:
+    if: github.event_name == 'push' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-22.04
     env:
       MIX_ENV: prod
@@ -61,6 +64,7 @@ jobs:
             cache/*.sha256
 
   macos:
+    if: github.event_name == 'push' || github.event.workflow_run.conclusion == 'success'
     runs-on: macos-15
     env:
       MIX_ENV: prod
@@ -106,6 +110,7 @@ jobs:
             cache/*.sha256
 
   windows:
+    if: github.event_name == 'push' || github.event.workflow_run.conclusion == 'success'
     runs-on: windows-2022
     env:
       MIX_ENV: prod
@@ -146,6 +151,7 @@ jobs:
             cache/*.sha256
 
   manylinux:
+    if: github.event_name == 'push' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     env:
       MIX_ENV: prod
