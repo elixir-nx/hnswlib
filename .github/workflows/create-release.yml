@@ -10,7 +10,7 @@ permissions:
 jobs:
   create-tag:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'autorelease: pending')
+    if: "${{ github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'autorelease: pending') }}"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
