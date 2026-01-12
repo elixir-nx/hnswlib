@@ -6,6 +6,7 @@ defmodule HNSWLib.Index.Test do
     space = :l2
     dim = 8
     max_elements = 0
+
     assert_raise FunctionClauseError, "no function clause matching in HNSWLib.Index.new/4", fn ->
       HNSWLib.Index.new(space, dim, max_elements)
     end

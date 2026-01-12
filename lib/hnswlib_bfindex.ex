@@ -7,6 +7,30 @@ defmodule HNSWLib.BFIndex do
   alias __MODULE__, as: T
   alias HNSWLib.Helper
 
+  @typedoc """
+  Type representing an HNSWLib BFIndex.
+
+  - *space*: `:cosine` | `:ip` | `:l2`.
+
+    An atom that indicates the vector space. Valid values are
+      - `:cosine`, cosine space
+      - `:ip`, inner product space
+      - `:l2`, L2 space
+
+  - *dim*: `non_neg_integer()`.
+
+    Number of dimensions for each vector.
+
+  - *reference*: `reference()`.
+
+    Reference to the underlying NIF BF index.
+  """
+  @type t() :: %__MODULE__{
+          space: :cosine | :ip | :l2,
+          dim: non_neg_integer(),
+          reference: reference()
+        }
+
   @doc """
   Construct a new BFIndex
 
