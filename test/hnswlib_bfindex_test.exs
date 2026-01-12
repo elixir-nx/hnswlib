@@ -365,7 +365,7 @@ defmodule HNSWLib.BFIndex.Test do
     {:ok, index_from_save} = HNSWLib.BFIndex.load_index(space, dim, save_to)
 
     assert HNSWLib.BFIndex.get_max_elements(index) ==
-      HNSWLib.BFIndex.get_max_elements(index_from_save)
+             HNSWLib.BFIndex.get_max_elements(index_from_save)
 
     # cleanup
     File.rm(save_to)
