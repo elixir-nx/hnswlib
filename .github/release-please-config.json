@@ -1,5 +1,5 @@
 {
-  "skip-github-release": true
+  "skip-github-release": true,
   "pull-request-header": ":rocket: Want to release this?",
   "pull-request-title-pattern": "chore: release ${version}",
   "bump-minor-pre-major": true,
