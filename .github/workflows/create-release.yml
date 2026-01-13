@@ -3,6 +3,12 @@ name: Create Release
 on:
   pull_request:
     types: [closed]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 0.1.7)'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -10,7 +16,11 @@ permissions:
 jobs:
   create-tag:
     runs-on: ubuntu-latest
-    if: "${{ github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'autorelease: pending') }}"
+    if: >-
+      ${{
+        github.event_name == 'workflow_dispatch' ||
+        (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'autorelease: pending'))
+      }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,20 +28,30 @@ jobs:
           fetch-depth: 0
 
       - name: Extract version from PR title
-        id: version
+        if: github.event_name == 'pull_request'
+        id: pr_version
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          VERSION=$(echo "$PR_TITLE" | grep -oP 'v\d+\.\d+\.\d+' || echo "")
+          VERSION=$(echo "$PR_TITLE" | grep -oP '\d+\.\d+\.\d+' || echo "")
           if [[ -z "$VERSION" ]]; then
             echo "No version found in PR title"
             exit 1
           fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version=v$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Set version from input
+        if: github.event_name == 'workflow_dispatch'
+        id: input_version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          VERSION="${INPUT_VERSION#v}"
+          echo "version=v$VERSION" >> $GITHUB_OUTPUT
 
       - name: Create and push tag
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ steps.pr_version.outputs.version || steps.input_version.outputs.version }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
