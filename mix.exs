@@ -37,7 +37,7 @@ defmodule HNSWLib.MixProject do
       {:elixir_make, "~> 0.8"},
 
       # runtime
-      {:nx, "~> 0.5"},
+      {:nx, "~> 0.5 or ~> 1.0"},
 
       # docs
       {:ex_doc, "~> 0.29", only: :dev, runtime: false}
