@@ -25,7 +25,7 @@ jobs:
       - uses: erlef/setup-beam@v1
         with:
           otp-version: 25
-          elixir-version: 1.14
+          elixir-version: 1.17
 
       - name: Compile and Test
         run: |
@@ -44,7 +44,7 @@ jobs:
       - uses: erlef/setup-beam@v1
         with:
           otp-version: "26.2.1"
-          elixir-version: "1.16.0"
+          elixir-version: "1.17.3"
 
       - uses: ilammy/msvc-dev-cmd@v1
         with:
