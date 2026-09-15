@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.8](https://github.com/elixir-nx/hnswlib/compare/v0.1.7...v0.1.8) (2026-09-15)
+
+
+### Miscellaneous
+
+* Allow Nx 1.0 ([#28](https://github.com/elixir-nx/hnswlib/issues/28)) ([8dd4319](https://github.com/elixir-nx/hnswlib/commit/8dd43196eaa3d9b3d5e82ed4e9cb273ce538bebc))
+* bump ci steps ([#29](https://github.com/elixir-nx/hnswlib/issues/29)) ([323c203](https://github.com/elixir-nx/hnswlib/commit/323c20372a186ebd30b13c99c5c795b957100dc2))
+
+
+### Continuous Integration
+
+* Push release tags with RELEASE_PAT so the build workflow runs ([#31](https://github.com/elixir-nx/hnswlib/issues/31)) ([ffeb032](https://github.com/elixir-nx/hnswlib/commit/ffeb032100027145bd2455cc26b16c046598ec58))
+
 ## [0.1.7](https://github.com/elixir-nx/hnswlib/compare/v0.1.6...v0.1.7) (2026-01-13)
 
 
