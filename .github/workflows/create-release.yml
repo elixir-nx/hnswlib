@@ -26,6 +26,9 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          # Tags pushed with the default GITHUB_TOKEN never trigger the
+          # build-and-publish workflow, so push them as the release user.
+          token: ${{ secrets.RELEASE_PAT }}
 
       - name: Extract version from PR title
         if: github.event_name == 'pull_request'
