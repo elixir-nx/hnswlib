@@ -60,3 +60,15 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -a "$VERSION" -m "Release $VERSION"
           git push origin "$VERSION"
+
+      # release-please skips GitHub releases here, so nothing else marks the
+      # release PR as tagged and every later run aborts with "untagged, merged
+      # release PRs outstanding".
+      - name: Mark the release PR as tagged
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PAT }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh label create "autorelease: tagged" --color ededed --description "release-please: release tagged" --force
+          gh pr edit "$PR" --remove-label "autorelease: pending" --add-label "autorelease: tagged"
