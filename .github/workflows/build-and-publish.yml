@@ -51,7 +51,7 @@ jobs:
           mix elixir_make.precompile
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: linux-otp-${{ matrix.otp_version }}
           path: |
@@ -96,7 +96,7 @@ jobs:
           mix elixir_make.precompile
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: macos-otp-${{ matrix.otp_version }}
           path: |
@@ -136,7 +136,7 @@ jobs:
           mix elixir_make.precompile
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-otp-${{ matrix.otp_version }}
           path: |
@@ -177,7 +177,7 @@ jobs:
           bash ./script-to-build-manylinux2014.sh "${{ env.MIX_ENV }}" "${{ matrix.otp_version }}" "${{ env.ELIXIR_VERSION }}" "${{ env.OPENSSL_VERSION }}" "${{ matrix.arch }}" "${{ env.HNSWLIB_CI_PRECOMPILE }}"
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: manylinux-${{ matrix.arch }}-otp-${{ matrix.otp_version }}
           path: |
