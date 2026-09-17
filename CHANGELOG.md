@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.9](https://github.com/elixir-nx/hnswlib/compare/v0.1.8...v0.1.9) (2026-09-16)
+
+
+### Miscellaneous
+
+* Add Dependabot for mix and GitHub Actions ([#33](https://github.com/elixir-nx/hnswlib/issues/33)) ([81bad89](https://github.com/elixir-nx/hnswlib/commit/81bad898460a0ab5e3b37d4f454651c0e59df145))
+* Prefix Dependabot commits so release-please picks them up ([#40](https://github.com/elixir-nx/hnswlib/issues/40)) ([80e12b1](https://github.com/elixir-nx/hnswlib/commit/80e12b1860048c90750635947ca6281ce245a304))
+
 ## [0.1.8](https://github.com/elixir-nx/hnswlib/compare/v0.1.7...v0.1.8) (2026-09-15)
 
 
