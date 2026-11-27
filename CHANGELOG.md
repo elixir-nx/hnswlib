@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.11](https://github.com/elixir-nx/hnswlib/compare/v0.1.10...v0.1.11) (2026-11-27)
+
+
+### Miscellaneous
+
+* **deps:** bump ex_doc from 0.40.4 to 0.40.5 ([#43](https://github.com/elixir-nx/hnswlib/issues/43)) ([6d8b1bd](https://github.com/elixir-nx/hnswlib/commit/6d8b1bdeb07d6bdfabfe71d0209572f87ac59f93))
+
 ## [0.1.10](https://github.com/elixir-nx/hnswlib/compare/v0.1.9...v0.1.10) (2026-09-17)
 
 
